@@ -1,92 +1,94 @@
-# Fit-Tracker Roadmap
+Fit-Tracker Roadmap
 
-## Vision
+Vision
 
-Fit-Tracker skal være den træningsapp, der gør det nemt at følge progression uden at skulle grave rundt i historik.
+Fit-Tracker skal være den træningsapp, der gør det nemt at følge sin udvikling uden at skulle lede i gamle træningspas.
 
-Det vigtigste fokus er at vise tidligere præstationer direkte, når man logger træning.
+Appens vigtigste funktion er at vise tidligere præstationer direkte, mens brugeren logger sin træning.
 
 ---
 
-## MVP (Version 1)
+Version 1 (MVP)
 
-### Workout Tracking
+Målet er at skabe en fuldt brugbar træningsapp.
+
+Træningslog
 
 - Opret træningspas
 - Tilføj øvelser
-- Log vægt og reps
+- Registrér vægt og reps
 - Gem træning
 
-### Progression
+Progression
 
-- Vis sidste vægt og reps ved hver øvelse
-- Automatisk registrering af PR'er
-- Historik pr. øvelse
+- Vis sidste resultat ved hver øvelse
+- Registrér personlige rekorder automatisk
+- Vis historik for hver øvelse
 
-### Statistik
+Statistik
 
-- Total tonnage
-- Antal træninger
-- Mest brugte øvelser
+- Samlet tonnage
+- Antal træningspas
+- Mest trænede øvelser
 
 ---
 
-## Version 2
+Version 2
 
-### Udvidet Statistik
+Udvidet Statistik
 
-- Progressionsgrafer
 - Ugentlig volumen
 - Månedlig volumen
+- Progressionsgrafer
 
-### Kropsmålinger
+Kropsdata
 
-- Vægt
-- Talje
-- Bryst
-- Arme
+- Kropsvægt
+- Taljemål
+- Brystmål
+- Armmål
 
-### Træningsnoter
+Noter
 
 - Noter på træningspas
 - Noter på øvelser
 
 ---
 
-## Version 3
+Version 3
 
-### PWA
+Mobiloplevelse
 
-- Installerbar på mobil
+- Installér som app (PWA)
 - Offline support
 
-### Programmer
+Træningsprogrammer
 
-- Gem træningsprogrammer
-- Del programmer med andre
+- Gem programmer
+- Del programmer med andre brugere
 
 ---
 
-## Teknologi
+Teknologi
 
-### Frontend
+Frontend
 
 - React
 - TypeScript
 - Vite
 - Tailwind CSS
 
-### Backend
+Backend
 
 - Supabase
 
-### Hosting
+Hosting
 
 - Vercel
 
 ---
 
-## Første Prioritet
+Prioriteret Udviklingsrækkefølge
 
 1. Dashboard
 2. Ny træning
@@ -94,3 +96,9 @@ Det vigtigste fokus er at vise tidligere præstationer direkte, når man logger 
 4. Historik
 5. PR-side
 6. Statistik
+
+---
+
+Langsigtet Mål
+
+At skabe den mest enkle og effektive app til styrketræning, hvor fokus er på progression og hurtig registrering af træning.
