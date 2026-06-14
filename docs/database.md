@@ -1,82 +1,113 @@
-# Database Design
+Databasedesign
 
-## Users
+Brugere
 
-| Field | Type |
-|---------|---------|
-| id | UUID |
-| email | String |
-| created_at | Timestamp |
+Gemmer oplysninger om brugeren.
+
+Felt| Type
+id| UUID
+email| Tekst
+oprettet_dato| Tidsstempel
 
 ---
 
-## Exercises
+Øvelser
 
-| Field | Type |
-|---------|---------|
-| id | UUID |
-| name | String |
-| muscle_group | String |
+Gemmer alle tilgængelige øvelser.
 
-### Examples
+Felt| Type
+id| UUID
+navn| Tekst
+muskelgruppe| Tekst
 
-- Bench Press
+Eksempler
+
+- Bænkpres
 - EZ Preacher Curl
-- Leg Press
+- Benpres
 - Chest Fly
+- Lat Pulldown
+- Skulderpres
 
 ---
 
-## Workouts
+Træningspas
 
-| Field | Type |
-|---------|---------|
-| id | UUID |
-| user_id | UUID |
-| date | Timestamp |
-| notes | Text |
+Gemmer hvert enkelt træningspas.
 
----
-
-## Workout Exercises
-
-| Field | Type |
-|---------|---------|
-| id | UUID |
-| workout_id | UUID |
-| exercise_id | UUID |
+Felt| Type
+id| UUID
+bruger_id| UUID
+dato| Tidsstempel
+noter| Tekst
 
 ---
 
-## Sets
+Træningsøvelser
 
-| Field | Type |
-|---------|---------|
-| id | UUID |
-| workout_exercise_id | UUID |
-| weight | Decimal |
-| reps | Integer |
-| set_number | Integer |
+Forbinder et træningspas med en øvelse.
 
----
-
-## Statistics
-
-Derived from workout data:
-
-- Total tonnage
-- Personal records
-- Most trained exercises
-- Weekly volume
-- Monthly volume
+Felt| Type
+id| UUID
+træningspas_id| UUID
+øvelse_id| UUID
 
 ---
 
-## Core Feature
+Sæt
 
-When logging an exercise, the app should always display:
+Gemmer alle udførte sæt.
 
-Last workout:
+Felt| Type
+id| UUID
+træningsøvelse_id| UUID
+vægt| Decimal
+reps| Heltal
+sæt_nummer| Heltal
+
+Eksempel
+
+Bænkpres
+
+Sæt| Vægt| Reps
+1| 75 kg| 8
+2| 75 kg| 8
+3| 72,5 kg| 10
+
+---
+
+Personlige Rekorder (PR)
+
+Kan beregnes automatisk ud fra træningsdata.
+
+Eksempler:
+
+- Højeste vægt
+- Største volumen
+- Bedste estimerede 1RM
+
+---
+
+Statistik
+
+Kan beregnes ud fra træningshistorikken.
+
+Statistikker
+
+- Samlet tonnage
+- Antal træningspas
+- Mest trænede øvelser
+- Ugentlig volumen
+- Månedlig volumen
+
+---
+
+Vigtig Funktion
+
+Når en bruger logger en øvelse, skal appen altid vise:
+
+Seneste træning:
+
 75 kg × 8 reps
 
-This is one of the primary features of Fit-Tracker.
+Dette er en af de vigtigste funktioner i hele Fit-Tracker.
