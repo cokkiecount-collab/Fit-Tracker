@@ -1,77 +1,130 @@
-# Features
+Funktioner
 
-## Dashboard
+Dashboard
 
-The dashboard should display:
+Dashboardet skal give et hurtigt overblik over brugerens træning.
 
-- Recent workouts
-- Recent PRs
-- Total tonnage
-- Workouts this month
+Vis:
+
+- Seneste træningspas
+- Nye personlige rekorder
+- Samlet tonnage
+- Antal træningspas denne måned
 
 ---
 
-## Workout Logging
+Log Træning
 
-### Main Goal
+Dette er appens vigtigste side.
 
-Logging a workout should be fast and simple.
+Mål
 
-Example:
+Det skal være hurtigt og nemt at registrere træning.
 
-Bench Press
+Eksempel
 
-Last workout:
+Bænkpres
+
+Seneste træning:
+
 75 kg × 8 reps
 
-Set 1
-75 kg × 8
+Sæt| Vægt| Reps
+1| 75| 8
+2| 75| 8
+3| 72,5| 10
 
-Set 2
-75 kg × 8
+Mulighed for:
 
-Set 3
-72.5 kg × 10
-
----
-
-## Exercise History
-
-Users should be able to see:
-
-- Previous workouts
-- Progression over time
-- Personal records
+- Tilføj sæt
+- Fjern sæt
+- Gem træning
 
 ---
 
-## Personal Records
+Historik
 
-Track:
+Brugeren skal kunne se tidligere træninger.
 
-- Highest weight
-- Best volume
-- Best estimated 1RM
+Funktioner
 
----
-
-## Statistics
-
-Track:
-
-- Total tonnage
-- Workouts completed
-- Most trained exercises
-- Weekly volume
-- Monthly volume
+- Filtrer efter øvelse
+- Se tidligere træningspas
+- Se progression over tid
 
 ---
 
-## Future Features
+Personlige Rekorder (PR)
 
-- Progression graphs
-- Bodyweight tracking
-- Body measurements
-- Training programs
+Appen skal automatisk registrere:
+
+- Højeste vægt
+- Højeste volumen
+- Bedste estimerede 1RM
+
+Eksempler
+
+Bænkpres:
+
+- 90 kg × 1
+
+EZ Preacher Curl:
+
+- 45 kg × 8
+
+Benpres:
+
+- 220 kg × 10
+
+---
+
+Statistik
+
+Vis udviklingen over tid.
+
+Statistikker
+
+- Samlet tonnage
+- Antal træningspas
+- Gennemsnitlig træningsfrekvens
+- Mest trænede øvelser
+
+---
+
+Fremtidige Funktioner
+
+Grafer
+
+- Styrkeudvikling
+- Volumenudvikling
+- Kropsvægt
+
+Kropsmålinger
+
+- Vægt
+- Talje
+- Bryst
+- Arme
+- Lår
+
+Træningsprogrammer
+
+- Opret programmer
+- Gem programmer
+- Del programmer
+
+Mobilfunktioner
+
 - Offline support
-- PWA installation
+- Installation som app (PWA)
+- Push-notifikationer
+
+---
+
+Kerneidé
+
+Fit-Tracker skal gøre det lettere at blive stærkere.
+
+Den vigtigste funktion i appen er derfor:
+
+«Vis altid seneste resultat direkte ved øvelsen, så brugeren ved præcis, hvad der skal slås næste gang.»
