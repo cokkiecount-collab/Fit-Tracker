@@ -1,64 +1,76 @@
-# Fit-Tracker 💪
+Fit-Tracker 💪
 
-A gym tracking application focused on progression.
+En træningsapp med fokus på progression, enkelhed og motivation.
 
-## Purpose
+Formål
 
-Most workout apps make it difficult to quickly see what you lifted last time.
+Mange træningsapps gør det besværligt at se, hvad man løftede sidst. Man skal ofte ind i historik, skifte mellem flere sider eller lede efter gamle træningspas.
 
-Fit-Tracker is built around one simple idea:
+Fit-Tracker bygger på en simpel idé:
 
-> Always show previous performance directly while logging a workout.
+«Vis altid sidste præstation direkte, mens træningen logges.»
 
-This makes progression easier and workout tracking faster.
-
----
-
-## Features
-
-### Workout Tracking
-
-- Log workouts
-- Log sets, reps and weight
-- Save workout history
-
-### Progression
-
-- Display previous workout results
-- Track personal records
-- View exercise history
-
-### Statistics
-
-- Total tonnage
-- Number of workouts
-- Most trained exercises
-- Weekly and monthly volume
+På den måde bliver det nemmere at følge sin progression og fokusere på træningen.
 
 ---
 
-## Planned Technology
+Funktioner
 
-### Frontend
+Træningslog
+
+- Opret træningspas
+- Tilføj øvelser
+- Registrér sæt, vægt og reps
+- Gem træningshistorik
+
+Progression
+
+- Vis sidste træning direkte ved øvelsen
+- Registrér personlige rekorder (PR)
+- Se udvikling over tid
+
+Statistik
+
+- Samlet tonnage (løftet vægt)
+- Antal gennemførte træninger
+- Mest trænede øvelser
+- Ugentlig og månedlig volumen
+
+---
+
+Teknologi
+
+Frontend
 
 - React
 - TypeScript
 - Vite
 - Tailwind CSS
 
-### Backend
+Backend
 
 - Supabase
 
-### Hosting
+Hosting
 
 - Vercel
 
 ---
 
-## Roadmap
+Planlagte Funktioner
 
-See:
+- Grafer over progression
+- Kropsvægt-tracking
+- Kropsmål
+- Træningsprogrammer
+- Offline support
+- Installation som app (PWA)
+
+---
+
+Dokumentation
+
+Projektets dokumentation findes i:
 
 - ROADMAP.md
 - docs/database.md
@@ -66,6 +78,6 @@ See:
 
 ---
 
-## Current Status
+Status
 
-Project planning phase.
+Projektet er i planlægningsfasen og under aktiv udvikling.
