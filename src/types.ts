@@ -1,6 +1,7 @@
 export type Saet = {
   vaegt: number
   reps: number
+  dato: string
 }
 
 export type Oevelse = {

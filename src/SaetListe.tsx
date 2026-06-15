@@ -1,9 +1,6 @@
 import { useState } from "react"
 
-type Saet = {
-  vaegt: number
-  reps: number
-}
+import type { Saet } from "./types"
 
 type Props = {
   saet: Saet[]
@@ -52,9 +49,10 @@ function SaetListe({
                   const nyeSaet = [...saet]
 
                   nyeSaet[index] = {
-                    vaegt: Number(vaegt),
-                    reps: Number(reps),
-                  }
+  ...nyeSaet[index],
+  vaegt: Number(vaegt),
+  reps: Number(reps),
+}
 
                   gemSaet(nyeSaet)
 
