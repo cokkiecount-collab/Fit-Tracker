@@ -5,41 +5,26 @@ import LoginSide from "./LoginSide"
 import StatistikSide from "./StatistikSide"
 import { supabase } from "./supabase"
 
-
 import type {
   Program,
   Bruger,
 } from "./types"
 
 function App() {
-  useEffect(() => {
-  async function hentBruger() {
-    const {
-      data: { user },
-    } =
-      await supabase.auth.getUser()
-
-    if (user) {
-      setAktivBruger({
-        brugernavn:
-          user.email ?? "",
-        kodeord: "",
-        programmer: [],
-      })
-    }
-  }
-
-  hentBruger()
-}, [])
-  const [side, setSide] = useState("overblik")
+  const [side, setSide] =
+    useState("overblik")
 
   const [brugere, setBrugere] =
     useState<Bruger[]>(() => {
       const gemteData =
-        localStorage.getItem("fittracker_brugere")
+        localStorage.getItem(
+          "fittracker_brugere"
+        )
 
       if (gemteData) {
-        return JSON.parse(gemteData)
+        return JSON.parse(
+          gemteData
+        )
       }
 
       return []
@@ -47,6 +32,25 @@ function App() {
 
   const [aktivBruger, setAktivBruger] =
     useState<Bruger | null>(null)
+
+  useEffect(() => {
+    async function hentBruger() {
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser()
+
+      if (user?.email) {
+        setAktivBruger({
+          brugernavn: user.email,
+          kodeord: "",
+          programmer: [],
+        })
+      }
+    }
+
+    hentBruger()
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(
@@ -65,11 +69,12 @@ function App() {
 
     const nyeBrugere = [...brugere]
 
-    const index = nyeBrugere.findIndex(
-      (b) =>
-        b.brugernavn ===
-        aktivBruger.brugernavn
-    )
+    const index =
+      nyeBrugere.findIndex(
+        (b) =>
+          b.brugernavn ===
+          aktivBruger.brugernavn
+      )
 
     if (index === -1) return
 
@@ -85,8 +90,6 @@ function App() {
     })
   }
 
-  console.log("Aktiv bruger:", aktivBruger)
-
   if (!aktivBruger) {
     return (
       <div
@@ -99,10 +102,8 @@ function App() {
         <h1>Fit-Tracker 💪</h1>
 
         <LoginSide
-          brugere={brugere}
-          setBrugere={setBrugere}
-          setAktivBruger={setAktivBruger}
-        />
+  setAktivBruger={setAktivBruger}
+/>
       </div>
     )
   }
@@ -118,21 +119,23 @@ function App() {
       <h1>Fit-Tracker 💪</h1>
 
       <p>
-        Logget ind som:{" "}
+        Logget ind som{" "}
         <strong>
-          {aktivBruger.brugernavn}
+          {
+            aktivBruger.brugernavn
+          }
         </strong>
       </p>
 
       <button
-  onClick={async () => {
-    await supabase.auth.signOut()
+        onClick={async () => {
+          await supabase.auth.signOut()
 
-    setAktivBruger(null)
-  }}
->
-  Log ud
-</button>
+          setAktivBruger(null)
+        }}
+      >
+        Log ud
+      </button>
 
       <div
         style={{
@@ -144,7 +147,9 @@ function App() {
       >
         <button
           onClick={() =>
-            setSide("overblik")
+            setSide(
+              "overblik"
+            )
           }
         >
           Overblik
@@ -152,7 +157,9 @@ function App() {
 
         <button
           onClick={() =>
-            setSide("programmer")
+            setSide(
+              "programmer"
+            )
           }
         >
           Programmer
@@ -160,7 +167,9 @@ function App() {
 
         <button
           onClick={() =>
-            setSide("statistik")
+            setSide(
+              "statistik"
+            )
           }
         >
           Statistik
@@ -168,7 +177,9 @@ function App() {
 
         <button
           onClick={() =>
-            setSide("indstillinger")
+            setSide(
+              "indstillinger"
+            )
           }
         >
           Indstillinger
@@ -177,27 +188,40 @@ function App() {
 
       {side === "overblik" && (
         <OverblikSide
-  programmer={programmer}
-/>
+          programmer={
+            programmer
+          }
+        />
       )}
 
       {side === "programmer" && (
         <ProgramSide
-          programmer={programmer}
-          setProgrammer={setProgrammer}
+          programmer={
+            programmer
+          }
+          setProgrammer={
+            setProgrammer
+          }
         />
       )}
 
       {side === "statistik" && (
-  <StatistikSide
-    programmer={programmer}
-  />
-)}
+        <StatistikSide
+          programmer={
+            programmer
+          }
+        />
+      )}
 
-      {side === "indstillinger" && (
+      {side ===
+        "indstillinger" && (
         <>
-          <h2>Indstillinger</h2>
-          <p>Kommer snart</p>
+          <h2>
+            Indstillinger
+          </h2>
+          <p>
+            Kommer snart
+          </p>
         </>
       )}
     </div>
