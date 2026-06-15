@@ -15,28 +15,48 @@ function OverblikSide({
     reps: number
   }[] = []
 
+  let senesteDato = ""
+  let senesteOevelse = ""
+
   programmer.forEach((program) => {
     program.dage.forEach((dag) => {
       dag.oevelser.forEach((oevelse) => {
-     oevelse.saet.forEach((saet) => {
-  tonnage +=
-    saet.vaegt * saet.reps
-})
+        oevelse.saet.forEach((saet) => {
+          tonnage +=
+            saet.vaegt * saet.reps
 
-if (oevelse.saet.length > 0) {
-  const bedsteSaet = oevelse.saet.reduce(
-    (bedste, nuvaerende) =>
-      nuvaerende.vaegt > bedste.vaegt
-        ? nuvaerende
-        : bedste
-  )
+          if (
+            saet.dato > senesteDato
+          ) {
+            senesteDato = saet.dato
+            senesteOevelse =
+              oevelse.navn
+          }
+        })
 
-  prs.push({
-    oevelse: oevelse.navn,
-    vaegt: bedsteSaet.vaegt,
-    reps: bedsteSaet.reps,
-  })
-}
+        if (
+          oevelse.saet.length > 0
+        ) {
+          const bedsteSaet =
+            oevelse.saet.reduce(
+              (
+                bedste,
+                nuvaerende
+              ) =>
+                nuvaerende.vaegt >
+                bedste.vaegt
+                  ? nuvaerende
+                  : bedste
+            )
+
+          prs.push({
+            oevelse: oevelse.navn,
+            vaegt:
+              bedsteSaet.vaegt,
+            reps:
+              bedsteSaet.reps,
+          })
+        }
       })
     })
   })
@@ -44,6 +64,32 @@ if (oevelse.saet.length > 0) {
   return (
     <>
       <h2>Overblik</h2>
+
+      <h3>Seneste træning</h3>
+
+      {senesteDato === "" ? (
+        <p>
+          Ingen træninger endnu
+        </p>
+      ) : (
+        <>
+          <p>
+            {new Date(
+              senesteDato
+            ).toLocaleDateString(
+              "da-DK"
+            )}
+          </p>
+
+          <p>
+            Seneste øvelse:
+            <strong>
+              {" "}
+              {senesteOevelse}
+            </strong>
+          </p>
+        </>
+      )}
 
       <h3>Nye PR'er</h3>
 
@@ -53,7 +99,8 @@ if (oevelse.saet.length > 0) {
         <ul>
           {prs.map((pr, index) => (
             <li key={index}>
-              {pr.oevelse}: {pr.vaegt} kg ×{" "}
+              {pr.oevelse}:{" "}
+              {pr.vaegt} kg ×{" "}
               {pr.reps}
             </li>
           ))}
