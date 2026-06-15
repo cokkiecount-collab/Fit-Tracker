@@ -67,7 +67,43 @@ type Props = {
                                                                                                                                                                                                                                                                                                                                                                                                                           </button>
 
                                                                                                                                                                                                                                                                                                                                                                                                                                 <h3>Sæt</h3>
+<h3>Progression</h3>
 
+<ul>
+  {(() => {
+    let bedsteVaegt = 0
+
+    return [...oevelse.saet]
+      .sort(
+        (a, b) =>
+          new Date(a.dato).getTime() -
+          new Date(b.dato).getTime()
+      )
+      .filter((s) => {
+        if (
+          s.vaegt > bedsteVaegt
+        ) {
+          bedsteVaegt =
+            s.vaegt
+          return true
+        }
+
+        return false
+      })
+      .map((s, index) => (
+        <li key={index}>
+          🏆{" "}
+          {new Date(
+            s.dato
+          ).toLocaleDateString(
+            "da-DK"
+          )}
+          {" - "}
+          {s.vaegt} kg
+        </li>
+      ))
+  })()}
+</ul>
                                                                                                                                                                                                                                                                                                                                                                                                                                       <SaetListe
   saet={oevelse.saet}
   gemSaet={(nyeSaet) =>

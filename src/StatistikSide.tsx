@@ -70,6 +70,12 @@ function StatistikSide({
     })
   })
 
+  prs.sort(
+    (a, b) => b.vaegt - a.vaegt
+  )
+
+  const top5PRs = prs.slice(0, 5)
+
   return (
     <>
       <h2>Statistik</h2>
@@ -114,19 +120,22 @@ function StatistikSide({
         </strong>
       </p>
 
-      <h3>Top PR'er</h3>
+      <h3>Top 5 PR'er</h3>
 
-      {prs.length === 0 ? (
+      {top5PRs.length === 0 ? (
         <p>Ingen PR'er endnu</p>
       ) : (
         <ul>
-          {prs.map((pr, index) => (
-            <li key={index}>
-              {pr.oevelse}:{" "}
-              {pr.vaegt} kg ×{" "}
-              {pr.reps}
-            </li>
-          ))}
+          {top5PRs.map(
+            (pr, index) => (
+              <li key={index}>
+                #{index + 1}{" "}
+                {pr.oevelse} -{" "}
+                {pr.vaegt} kg ×{" "}
+                {pr.reps}
+              </li>
+            )
+          )}
         </ul>
       )}
 
