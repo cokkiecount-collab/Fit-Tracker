@@ -3,6 +3,7 @@ import OverblikSide from "./OverblikSide"
 import ProgramSide from "./ProgramSide"
 import LoginSide from "./LoginSide"
 import StatistikSide from "./StatistikSide"
+import { supabase } from "./supabase"
 
 
 import type {
@@ -11,6 +12,25 @@ import type {
 } from "./types"
 
 function App() {
+  useEffect(() => {
+  async function hentBruger() {
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser()
+
+    if (user) {
+      setAktivBruger({
+        brugernavn:
+          user.email ?? "",
+        kodeord: "",
+        programmer: [],
+      })
+    }
+  }
+
+  hentBruger()
+}, [])
   const [side, setSide] = useState("overblik")
 
   const [brugere, setBrugere] =
@@ -105,12 +125,14 @@ function App() {
       </p>
 
       <button
-        onClick={() =>
-          setAktivBruger(null)
-        }
-      >
-        Log ud
-      </button>
+  onClick={async () => {
+    await supabase.auth.signOut()
+
+    setAktivBruger(null)
+  }}
+>
+  Log ud
+</button>
 
       <div
         style={{

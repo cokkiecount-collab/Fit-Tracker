@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { Bruger } from "./types"
-
+import { supabase } from "./supabase"
 type Props = {
   brugere: Bruger[]
   setBrugere: React.Dispatch<
@@ -49,25 +49,32 @@ function LoginSide({
       <br />
 
       <button
-        onClick={() => {
-          const bruger = brugere.find(
-            (b) =>
-              b.brugernavn === brugernavn &&
-              b.kodeord === kodeord
-          )
+  onClick={async () => {
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email: brugernavn,
+        password: kodeord,
+      })
 
-          if (!bruger) {
-            alert(
-              "Forkert brugernavn eller kodeord"
-            )
-            return
-          }
+    console.log(data)
+    console.log(error)
 
-          setAktivBruger(bruger)
-        }}
-      >
-        Log ind
-      </button>
+    if (error) {
+  alert(error.message)
+  return
+}
+
+setAktivBruger({
+  brugernavn,
+  kodeord: "",
+  programmer: [],
+})
+
+alert("Logget ind!")
+  }}
+>
+  Log ind
+</button>
 
       <button
         style={{ marginLeft: "10px" }}
@@ -109,6 +116,32 @@ function LoginSide({
         }}
       >
         Opret bruger
+        <button
+  style={{
+    marginLeft: "10px",
+  }}
+  onClick={async () => {
+    const { data, error } =
+      await supabase.auth.signUp({
+        email: brugernavn,
+        password: kodeord,
+      })
+
+    console.log(data)
+    console.log(error)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    alert(
+      "Bruger oprettet i Supabase!"
+    )
+  }}
+>
+  Test Supabase
+</button>
       </button>
     </>
   )
