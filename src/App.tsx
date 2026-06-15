@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import OverblikSide from "./OverblikSide"
 import ProgramSide from "./ProgramSide"
 import LoginSide from "./LoginSide"
+import StatistikSide from "./StatistikSide"
+
 
 import type {
   Program,
@@ -64,7 +66,7 @@ function App() {
   }
 
   console.log("Aktiv bruger:", aktivBruger)
-  
+
   if (!aktivBruger) {
     return (
       <div
@@ -152,7 +154,9 @@ function App() {
       </div>
 
       {side === "overblik" && (
-        <OverblikSide />
+        <OverblikSide
+  programmer={programmer}
+/>
       )}
 
       {side === "programmer" && (
@@ -163,11 +167,10 @@ function App() {
       )}
 
       {side === "statistik" && (
-        <>
-          <h2>Statistik</h2>
-          <p>Kommer snart</p>
-        </>
-      )}
+  <StatistikSide
+    programmer={programmer}
+  />
+)}
 
       {side === "indstillinger" && (
         <>
