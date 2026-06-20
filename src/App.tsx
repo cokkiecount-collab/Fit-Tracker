@@ -54,6 +54,7 @@ function App() {
     await supabase.auth.signOut()
     setAktivBruger(null)
     setUserId(null)
+    setSide("overblik")
   }
 
   return (
