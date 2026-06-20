@@ -46,11 +46,14 @@ export function useSupabase(userId: string | null) {
       ? await supabase.from("oevelser").select("*").in("traeningsdag_id", dageIds).order("created_at")
       : { data: [] }
 
-    const oevelseIds = (oevelserData ?? []).map((o) => o.id)
-
-    // Hent kun saet fra seneste session per oevelse
+    // Hent seneste session per dag - filtrer på user_id!
     const { data: sessionerData } = dageIds.length > 0
-      ? await supabase.from("sessioner").select("*").in("traeningsdag_id", dageIds).order("dato", { ascending: false })
+      ? await supabase
+          .from("sessioner")
+          .select("*")
+          .eq("user_id", uid)
+          .in("traeningsdag_id", dageIds)
+          .order("dato", { ascending: false })
       : { data: [] }
 
     // Find seneste session per dag
@@ -98,10 +101,10 @@ export function useSupabase(userId: string | null) {
   }
 
   // --- SESSIONER ---
-  async function startSession(dagId: number, userId: string): Promise<number | null> {
+  async function startSession(dagId: number, uid: string): Promise<number | null> {
     const { data, error } = await supabase
       .from("sessioner")
-      .insert({ traeningsdag_id: dagId, user_id: userId, dato: new Date().toISOString() })
+      .insert({ traeningsdag_id: dagId, user_id: uid, dato: new Date().toISOString() })
       .select()
       .single()
 
@@ -117,10 +120,10 @@ export function useSupabase(userId: string | null) {
   }
 
   // --- PROGRAM ---
-  async function opretProgram(navn: string, userId: string) {
+  async function opretProgram(navn: string, uid: string) {
     const { data, error } = await supabase
       .from("programmer")
-      .insert({ navn, user_id: userId })
+      .insert({ navn, user_id: uid })
       .select()
       .single()
 
@@ -212,7 +215,7 @@ export function useSupabase(userId: string | null) {
     )
   }
 
-  // --- SAET (tilknyttet session) ---
+  // --- SAET ---
   async function opretSaet(oevelseId: number, dagId: number, programId: number, vaegt: number, reps: number, sessionId: number) {
     const dato = new Date().toISOString()
     const { data, error } = await supabase
@@ -223,7 +226,6 @@ export function useSupabase(userId: string | null) {
 
     if (error || !data) return
 
-    // Opdater aktiv session
     setAktivSession((prev) => prev ? {
       ...prev,
       saet: [...prev.saet, { id: data.id, vaegt, reps, dato, oevelse_id: oevelseId, session_id: sessionId }]
