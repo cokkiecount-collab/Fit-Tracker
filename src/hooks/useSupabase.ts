@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
-import type { Program, Traeningsdag, Oevelse, Saet } from "../types"
+import type { Program, Saet } from "../types"
+
+export type Session = {
+  id: number
+  traeningsdag_id: number
+  dato: string
+  saet: (Saet & { oevelse_id: number, session_id: number })[]
+}
 
 export function useSupabase(userId: string | null) {
   const [programmer, setProgrammer] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
+  const [aktivSession, setAktivSession] = useState<Session | null>(null)
 
   useEffect(() => {
     if (!userId) {
@@ -18,46 +26,47 @@ export function useSupabase(userId: string | null) {
   async function hentAltData(uid: string) {
     setLoading(true)
 
-    // Hent programmer
     const { data: progData } = await supabase
       .from("programmer")
       .select("*")
       .eq("user_id", uid)
       .order("created_at")
 
-    if (!progData) {
-      setLoading(false)
-      return
-    }
+    if (!progData) { setLoading(false); return }
 
-    // Hent traeningsdage
     const { data: dageData } = await supabase
       .from("traeningsdage")
       .select("*")
       .in("program_id", progData.map((p) => p.id))
       .order("created_at")
 
-    // Hent oevelser
     const dageIds = (dageData ?? []).map((d) => d.id)
+
     const { data: oevelserData } = dageIds.length > 0
-      ? await supabase
-          .from("oevelser")
-          .select("*")
-          .in("traeningsdag_id", dageIds)
-          .order("created_at")
+      ? await supabase.from("oevelser").select("*").in("traeningsdag_id", dageIds).order("created_at")
       : { data: [] }
 
-    // Hent saet
     const oevelseIds = (oevelserData ?? []).map((o) => o.id)
-    const { data: saetData } = oevelseIds.length > 0
-      ? await supabase
-          .from("saet")
-          .select("*")
-          .in("oevelse_id", oevelseIds)
-          .order("dato")
+
+    // Hent kun saet fra seneste session per oevelse
+    const { data: sessionerData } = dageIds.length > 0
+      ? await supabase.from("sessioner").select("*").in("traeningsdag_id", dageIds).order("dato", { ascending: false })
       : { data: [] }
 
-    // Byg hierarkiet op
+    // Find seneste session per dag
+    const senesteSessionPerDag: Record<number, number> = {}
+    for (const s of (sessionerData ?? [])) {
+      if (!senesteSessionPerDag[s.traeningsdag_id]) {
+        senesteSessionPerDag[s.traeningsdag_id] = s.id
+      }
+    }
+
+    const senesteSessionIds = Object.values(senesteSessionPerDag)
+
+    const { data: saetData } = senesteSessionIds.length > 0
+      ? await supabase.from("saet").select("*").in("session_id", senesteSessionIds).order("dato")
+      : { data: [] }
+
     const byggede: Program[] = (progData ?? []).map((p) => ({
       id: p.id,
       navn: p.navn,
@@ -78,6 +87,7 @@ export function useSupabase(userId: string | null) {
                   vaegt: s.vaegt,
                   reps: s.reps,
                   dato: s.dato,
+                  session_id: s.session_id,
                 })),
             })),
         })),
@@ -85,6 +95,25 @@ export function useSupabase(userId: string | null) {
 
     setProgrammer(byggede)
     setLoading(false)
+  }
+
+  // --- SESSIONER ---
+  async function startSession(dagId: number, userId: string): Promise<number | null> {
+    const { data, error } = await supabase
+      .from("sessioner")
+      .insert({ traeningsdag_id: dagId, user_id: userId, dato: new Date().toISOString() })
+      .select()
+      .single()
+
+    if (error || !data) return null
+
+    setAktivSession({ id: data.id, traeningsdag_id: dagId, dato: data.dato, saet: [] })
+    return data.id
+  }
+
+  async function afslutSession() {
+    setAktivSession(null)
+    if (userId) await hentAltData(userId)
   }
 
   // --- PROGRAM ---
@@ -96,18 +125,12 @@ export function useSupabase(userId: string | null) {
       .single()
 
     if (error || !data) return
-
-    setProgrammer((prev) => [
-      ...prev,
-      { id: data.id, navn: data.navn, dage: [] },
-    ])
+    setProgrammer((prev) => [...prev, { id: data.id, navn: data.navn, dage: [] }])
   }
 
   async function opdaterProgram(id: number, navn: string) {
     await supabase.from("programmer").update({ navn }).eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, navn } : p))
-    )
+    setProgrammer((prev) => prev.map((p) => (p.id === id ? { ...p, navn } : p)))
   }
 
   async function sletProgram(id: number) {
@@ -124,18 +147,9 @@ export function useSupabase(userId: string | null) {
       .single()
 
     if (error || !data) return
-
     setProgrammer((prev) =>
       prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: [
-                ...p.dage,
-                { id: data.id, navn: data.navn, oevelser: [] },
-              ],
-            }
-          : p
+        p.id === programId ? { ...p, dage: [...p.dage, { id: data.id, navn: data.navn, oevelser: [] }] } : p
       )
     )
   }
@@ -144,14 +158,7 @@ export function useSupabase(userId: string | null) {
     await supabase.from("traeningsdage").update({ navn }).eq("id", id)
     setProgrammer((prev) =>
       prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === id ? { ...d, navn } : d
-              ),
-            }
-          : p
+        p.id === programId ? { ...p, dage: p.dage.map((d) => (d.id === id ? { ...d, navn } : d)) } : p
       )
     )
   }
@@ -160,9 +167,7 @@ export function useSupabase(userId: string | null) {
     await supabase.from("traeningsdage").delete().eq("id", id)
     setProgrammer((prev) =>
       prev.map((p) =>
-        p.id === programId
-          ? { ...p, dage: p.dage.filter((d) => d.id !== id) }
-          : p
+        p.id === programId ? { ...p, dage: p.dage.filter((d) => d.id !== id) } : p
       )
     )
   }
@@ -176,24 +181,10 @@ export function useSupabase(userId: string | null) {
       .single()
 
     if (error || !data) return
-
     setProgrammer((prev) =>
       prev.map((p) =>
         p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: [
-                        ...d.oevelser,
-                        { id: data.id, navn: data.navn, saet: [] },
-                      ],
-                    }
-                  : d
-              ),
-            }
+          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: [...d.oevelser, { id: data.id, navn: data.navn, saet: [] }] } : d) }
           : p
       )
     )
@@ -204,19 +195,7 @@ export function useSupabase(userId: string | null) {
     setProgrammer((prev) =>
       prev.map((p) =>
         p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.map((o) =>
-                        o.id === id ? { ...o, navn } : o
-                      ),
-                    }
-                  : d
-              ),
-            }
+          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.map((o) => o.id === id ? { ...o, navn } : o) } : d) }
           : p
       )
     )
@@ -227,123 +206,41 @@ export function useSupabase(userId: string | null) {
     setProgrammer((prev) =>
       prev.map((p) =>
         p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.filter((o) => o.id !== id),
-                    }
-                  : d
-              ),
-            }
+          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.filter((o) => o.id !== id) } : d) }
           : p
       )
     )
   }
 
-  // --- SAET ---
-  async function opretSaet(oevelseId: number, dagId: number, programId: number, vaegt: number, reps: number) {
+  // --- SAET (tilknyttet session) ---
+  async function opretSaet(oevelseId: number, dagId: number, programId: number, vaegt: number, reps: number, sessionId: number) {
     const dato = new Date().toISOString()
     const { data, error } = await supabase
       .from("saet")
-      .insert({ oevelse_id: oevelseId, vaegt, reps, dato })
+      .insert({ oevelse_id: oevelseId, vaegt, reps, dato, session_id: sessionId })
       .select()
       .single()
 
     if (error || !data) return
 
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.map((o) =>
-                        o.id === oevelseId
-                          ? {
-                              ...o,
-                              saet: [
-                                ...o.saet,
-                                { id: data.id, vaegt: data.vaegt, reps: data.reps, dato: data.dato },
-                              ],
-                            }
-                          : o
-                      ),
-                    }
-                  : d
-              ),
-            }
-          : p
-      )
-    )
-  }
-
-  async function opdaterSaet(id: number, vaegt: number, reps: number, oevelseId: number, dagId: number, programId: number) {
-    await supabase.from("saet").update({ vaegt, reps }).eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.map((o) =>
-                        o.id === oevelseId
-                          ? {
-                              ...o,
-                              saet: o.saet.map((s) =>
-                                s.id === id ? { ...s, vaegt, reps } : s
-                              ),
-                            }
-                          : o
-                      ),
-                    }
-                  : d
-              ),
-            }
-          : p
-      )
-    )
+    // Opdater aktiv session
+    setAktivSession((prev) => prev ? {
+      ...prev,
+      saet: [...prev.saet, { id: data.id, vaegt, reps, dato, oevelse_id: oevelseId, session_id: sessionId }]
+    } : null)
   }
 
   async function sletSaet(id: number, oevelseId: number, dagId: number, programId: number) {
     await supabase.from("saet").delete().eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.map((o) =>
-                        o.id === oevelseId
-                          ? {
-                              ...o,
-                              saet: o.saet.filter((s) => s.id !== id),
-                            }
-                          : o
-                      ),
-                    }
-                  : d
-              ),
-            }
-          : p
-      )
-    )
+    setAktivSession((prev) => prev ? { ...prev, saet: prev.saet.filter((s) => s.id !== id) } : null)
   }
 
   return {
     programmer,
     loading,
+    aktivSession,
+    startSession,
+    afslutSession,
     opretProgram,
     opdaterProgram,
     sletProgram,
@@ -354,7 +251,6 @@ export function useSupabase(userId: string | null) {
     opdaterOevelse,
     sletOevelse,
     opretSaet,
-    opdaterSaet,
     sletSaet,
   }
 }
