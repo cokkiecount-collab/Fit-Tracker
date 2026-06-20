@@ -11,11 +11,12 @@ type Props = {
 function TraeningSide({ programmer, userId, db }: Props) {
   const [valgtProgramId, setValgtProgramId] = useState<number | null>(null)
   const [valgtDagId, setValgtDagId] = useState<number | null>(null)
+  const [aktivSessionId, setAktivSessionId] = useState<number | null>(null)
+  const [dagSaet, setDagSaet] = useState<any[]>([])
 
   const valgtProgram = programmer.find((p) => p.id === valgtProgramId) ?? null
   const valgtDag = valgtProgram?.dage.find((d) => d.id === valgtDagId) ?? null
 
-  // Vælg program
   if (!valgtProgramId) {
     return (
       <>
@@ -40,7 +41,6 @@ function TraeningSide({ programmer, userId, db }: Props) {
     )
   }
 
-  // Vælg dag
   if (!valgtDagId) {
     return (
       <>
@@ -49,7 +49,11 @@ function TraeningSide({ programmer, userId, db }: Props) {
         <p style={{ color: "#888", marginBottom: "12px" }}>Vælg træningsdag:</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {valgtProgram?.dage.map((dag) => (
-            <button key={dag.id} onClick={() => setValgtDagId(dag.id!)} style={dagKort}>
+            <button key={dag.id} onClick={() => {
+              setValgtDagId(dag.id!)
+              setAktivSessionId(null)
+              setDagSaet([])
+            }} style={dagKort}>
               <span style={{ fontSize: "20px" }}>📅</span>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontWeight: "bold", fontSize: "16px" }}>{dag.navn}</div>
@@ -63,21 +67,25 @@ function TraeningSide({ programmer, userId, db }: Props) {
     )
   }
 
-  // Træn
-  const sessionStartet = db.aktivSession?.traeningsdag_id === valgtDagId
-
   return (
     <>
-      <button onClick={() => { setValgtDagId(null) }} style={tilbageKnap}>← Tilbage</button>
+      <button onClick={() => {
+        setValgtDagId(null)
+        setAktivSessionId(null)
+        setDagSaet([])
+      }} style={tilbageKnap}>← Tilbage</button>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <div>
           <h2 style={{ margin: 0 }}>{valgtDag?.navn}</h2>
           <p style={{ color: "#888", fontSize: "14px", margin: "4px 0 0" }}>{valgtProgram?.navn}</p>
         </div>
-        {sessionStartet ? (
+        {aktivSessionId ? (
           <button
             onClick={async () => {
               await db.afslutSession()
+              setAktivSessionId(null)
+              setDagSaet([])
               setValgtDagId(null)
             }}
             style={afslutKnap}
@@ -86,7 +94,11 @@ function TraeningSide({ programmer, userId, db }: Props) {
           </button>
         ) : (
           <button
-            onClick={() => db.startSession(valgtDagId, userId)}
+            onClick={async () => {
+              const id = await db.startSession(valgtDagId, userId)
+              console.log("Ny session ID sat til:", id)
+              if (id) setAktivSessionId(id)
+            }}
             style={startKnap}
           >
             ▶ Start træning
@@ -94,7 +106,7 @@ function TraeningSide({ programmer, userId, db }: Props) {
         )}
       </div>
 
-      {!sessionStartet ? (
+      {!aktivSessionId ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>
           <p style={{ fontSize: "40px" }}>💪</p>
           <p>Tryk "Start træning" for at begynde</p>
@@ -107,8 +119,9 @@ function TraeningSide({ programmer, userId, db }: Props) {
               oevelse={oevelse}
               dagId={valgtDagId}
               programId={valgtProgramId}
-              sessionId={db.aktivSession!.id}
-              dagSaet={db.aktivSession!.saet.filter((s) => s.oevelse_id === oevelse.id!)}
+              sessionId={aktivSessionId}
+              dagSaet={dagSaet.filter((s) => s.oevelse_id === oevelse.id!)}
+              setDagSaet={setDagSaet}
               db={db}
             />
           ))}
@@ -124,6 +137,7 @@ function OevelseKort({
   programId,
   sessionId,
   dagSaet,
+  setDagSaet,
   db
 }: {
   oevelse: Oevelse
@@ -131,12 +145,12 @@ function OevelseKort({
   programId: number
   sessionId: number
   dagSaet: any[]
+  setDagSaet: React.Dispatch<React.SetStateAction<any[]>>
   db: ReturnType<typeof useSupabase>
 }) {
   const [vaegt, setVaegt] = useState("")
   const [reps, setReps] = useState("")
 
-  // Sidst løftet (fra forrige session)
   const sidsteSaet = oevelse.saet.length > 0
     ? [...oevelse.saet].sort((a, b) => new Date(b.dato).getTime() - new Date(a.dato).getTime())[0]
     : null
@@ -150,14 +164,12 @@ function OevelseKort({
         {pr > 0 && <span style={{ color: "#facc15", fontSize: "13px" }}>🏆 PR: {pr} kg</span>}
       </div>
 
-      {/* Reminder fra sidst */}
       {sidsteSaet && (
         <p style={{ color: "#666", fontSize: "13px", margin: "0 0 12px", fontStyle: "italic" }}>
           Sidst: {sidsteSaet.vaegt} kg × {sidsteSaet.reps} reps
         </p>
       )}
 
-      {/* Dagens sæt */}
       {dagSaet.length > 0 && (
         <div style={{ marginBottom: "12px" }}>
           {dagSaet.map((s, i) => (
@@ -165,7 +177,10 @@ function OevelseKort({
               <span style={{ color: "#aaa" }}>Sæt {i + 1}</span>
               <span>{s.vaegt} kg × {s.reps}</span>
               <button
-                onClick={() => db.sletSaet(s.id!, oevelse.id!, dagId, programId)}
+                onClick={async () => {
+                  await db.sletSaet(s.id!, oevelse.id!, dagId, programId)
+                  setDagSaet((prev) => prev.filter((x) => x.id !== s.id))
+                }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#666", fontSize: "14px" }}
               >
                 ×
@@ -175,7 +190,6 @@ function OevelseKort({
         </div>
       )}
 
-      {/* Log sæt */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <input
           type="number"
@@ -196,7 +210,10 @@ function OevelseKort({
             if (!vaegt || !reps) return
             const nyVaegt = Number(vaegt)
             const erNyPR = nyVaegt > pr
+            console.log("Logger sæt med sessionId:", sessionId)
             await db.opretSaet(oevelse.id!, dagId, programId, nyVaegt, Number(reps), sessionId)
+            const nytSaet = { id: Date.now(), vaegt: nyVaegt, reps: Number(reps), dato: new Date().toISOString(), oevelse_id: oevelse.id!, session_id: sessionId }
+            setDagSaet((prev) => [...prev, nytSaet])
             setVaegt("")
             setReps("")
             if (erNyPR) alert(`🏆 Ny PR i ${oevelse.navn}!\n${nyVaegt} kg`)
