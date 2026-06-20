@@ -96,7 +96,6 @@ function TraeningSide({ programmer, userId, db }: Props) {
           <button
             onClick={async () => {
               const id = await db.startSession(valgtDagId, userId)
-              console.log("Ny session ID sat til:", id)
               if (id) setAktivSessionId(id)
             }}
             style={startKnap}
@@ -151,11 +150,13 @@ function OevelseKort({
   const [vaegt, setVaegt] = useState("")
   const [reps, setReps] = useState("")
 
+  // Reminder fra seneste session
   const sidsteSaet = oevelse.saet.length > 0
     ? [...oevelse.saet].sort((a, b) => new Date(b.dato).getTime() - new Date(a.dato).getTime())[0]
     : null
 
-  const pr = oevelse.saet.length > 0 ? Math.max(...oevelse.saet.map((s) => s.vaegt)) : 0
+  // PR fra alle historiske saet
+  const pr = oevelse.prVaegt ?? 0
 
   return (
     <div style={{ backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
@@ -210,9 +211,15 @@ function OevelseKort({
             if (!vaegt || !reps) return
             const nyVaegt = Number(vaegt)
             const erNyPR = nyVaegt > pr
-            console.log("Logger sæt med sessionId:", sessionId)
             await db.opretSaet(oevelse.id!, dagId, programId, nyVaegt, Number(reps), sessionId)
-            const nytSaet = { id: Date.now(), vaegt: nyVaegt, reps: Number(reps), dato: new Date().toISOString(), oevelse_id: oevelse.id!, session_id: sessionId }
+            const nytSaet = {
+              id: Date.now(),
+              vaegt: nyVaegt,
+              reps: Number(reps),
+              dato: new Date().toISOString(),
+              oevelse_id: oevelse.id!,
+              session_id: sessionId
+            }
             setDagSaet((prev) => [...prev, nytSaet])
             setVaegt("")
             setReps("")
