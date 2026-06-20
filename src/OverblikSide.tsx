@@ -1,15 +1,14 @@
-import { useState } from "react"
 import type { Program } from "./types"
 
 type Props = {
   programmer: Program[]
   setSide: (side: string) => void
+  gaaTilTraening: (programId: number) => void
 }
 
-function OverblikSide({ programmer, setSide }: Props) {
+function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
   let tonnage = 0
   let senesteDato = ""
-  let senesteOevelse = ""
 
   programmer.forEach((program) => {
     program.dage.forEach((dag) => {
@@ -18,7 +17,6 @@ function OverblikSide({ programmer, setSide }: Props) {
           tonnage += saet.vaegt * saet.reps
           if (saet.dato > senesteDato) {
             senesteDato = saet.dato
-            senesteOevelse = oevelse.navn
           }
         })
       })
@@ -29,16 +27,12 @@ function OverblikSide({ programmer, setSide }: Props) {
     <>
       <h1 style={{ textAlign: "center", marginBottom: "24px" }}>Fit-Tracker 💪</h1>
 
-      {/* Programmer kort */}
       <h2 style={{ fontSize: "18px", marginBottom: "12px" }}>Dine programmer</h2>
 
       {programmer.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>
           <p>Du har ingen programmer endnu</p>
-          <button
-            onClick={() => setSide("admin")}
-            style={storKnap}
-          >
+          <button onClick={() => setSide("admin")} style={storKnap}>
             + Opret dit første program
           </button>
         </div>
@@ -47,7 +41,7 @@ function OverblikSide({ programmer, setSide }: Props) {
           {programmer.map((program) => (
             <button
               key={program.id}
-              onClick={() => setSide("traening")}
+              onClick={() => gaaTilTraening(program.id!)}
               style={programKort}
             >
               <span style={{ fontSize: "20px" }}>💪</span>
@@ -57,14 +51,14 @@ function OverblikSide({ programmer, setSide }: Props) {
                   {program.dage.length} dag{program.dage.length !== 1 ? "e" : ""}
                 </div>
               </div>
+              <span style={{ marginLeft: "auto", color: "#4ade80", fontSize: "20px" }}>›</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* Statistik widget */}
       <div style={{ marginTop: "32px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: "16px" }}>📊 Overblik</h3>
+        <h3 style={{ margin: "0 0 12px", fontSize: "16px" }}>📈 Overblik</h3>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>{programmer.length}</div>
@@ -87,29 +81,16 @@ function OverblikSide({ programmer, setSide }: Props) {
 }
 
 const storKnap: React.CSSProperties = {
-  backgroundColor: "#4ade80",
-  color: "#000",
-  border: "none",
-  borderRadius: "12px",
-  padding: "16px 24px",
-  fontSize: "16px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  width: "100%",
-  marginTop: "12px"
+  backgroundColor: "#4ade80", color: "#000", border: "none",
+  borderRadius: "12px", padding: "16px 24px", fontSize: "16px",
+  fontWeight: "bold", cursor: "pointer", width: "100%", marginTop: "12px"
 }
 
 const programKort: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-  backgroundColor: "#1e1e1e",
-  border: "1px solid #333",
-  borderRadius: "12px",
-  padding: "20px",
-  cursor: "pointer",
-  width: "100%",
-  color: "white"
+  display: "flex", alignItems: "center", gap: "16px",
+  backgroundColor: "#1e1e1e", border: "1px solid #333",
+  borderRadius: "12px", padding: "20px", cursor: "pointer",
+  width: "100%", color: "white"
 }
 
 export default OverblikSide
