@@ -1,117 +1,94 @@
-import { useState } from "react"
-import type { Bruger } from "./types"
-import { supabase } from "./supabase"
+import { useEffect, useState } from "react"
+import { supabase } from "../supabase"
+import type { Bruger } from "../types"
 
 type Props = {
-  setAktivBruger: (
-    bruger: Bruger
-  ) => void
+  setAktivBruger: (bruger: Bruger) => void
+  setUserId: (id: string) => void
 }
 
-function LoginSide({
-  setAktivBruger,
-}: Props) {
-  const [brugernavn, setBrugernavn] =
-    useState("")
+function LoginSide({ setAktivBruger, setUserId }: Props) {
+  const [email, setEmail] = useState("")
+  const [kodeord, setKodeord] = useState("")
+  const [erLogin, setErLogin] = useState(true)
+  const [fejl, setFejl] = useState("")
 
-  const [kodeord, setKodeord] =
-    useState("")
+  async function haandterIndsend() {
+    setFejl("")
+
+    if (erLogin) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: kodeord,
+      })
+
+      if (error) {
+        setFejl(error.message)
+        return
+      }
+
+      if (data.user) {
+        setAktivBruger({
+          brugernavn: data.user.email ?? "",
+          kodeord: "",
+          programmer: [],
+        })
+        setUserId(data.user.id)
+      }
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: kodeord,
+      })
+
+      if (error) {
+        setFejl(error.message)
+        return
+      }
+
+      if (data.user) {
+        setAktivBruger({
+          brugernavn: data.user.email ?? "",
+          kodeord: "",
+          programmer: [],
+        })
+        setUserId(data.user.id)
+      }
+    }
+  }
 
   return (
-    <>
-      <h2>Login</h2>
+    <div>
+      <h2>{erLogin ? "Log ind" : "Opret konto"}</h2>
 
       <input
         type="email"
         placeholder="Email"
-        value={brugernavn}
-        onChange={(e) =>
-          setBrugernavn(
-            e.target.value
-          )
-        }
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
-
-      <br />
-      <br />
 
       <input
         type="password"
         placeholder="Kodeord"
         value={kodeord}
-        onChange={(e) =>
-          setKodeord(
-            e.target.value
-          )
-        }
+        onChange={(e) => setKodeord(e.target.value)}
+        style={{ marginLeft: "10px" }}
       />
 
-      <br />
-      <br />
-
-      <button
-        onClick={async () => {
-          const {
-            error,
-          } =
-            await supabase.auth.signInWithPassword(
-              {
-                email:
-                  brugernavn,
-                password:
-                  kodeord,
-              }
-            )
-
-          if (error) {
-            alert(
-              error.message
-            )
-            return
-          }
-
-          setAktivBruger({
-            brugernavn,
-            kodeord: "",
-            programmer: [],
-          })
-        }}
-      >
-        Log ind
+      <button onClick={haandterIndsend} style={{ marginLeft: "10px" }}>
+        {erLogin ? "Log ind" : "Opret"}
       </button>
 
-      <button
-        style={{
-          marginLeft: "10px",
-        }}
-        onClick={async () => {
-          const {
-            error,
-          } =
-            await supabase.auth.signUp(
-              {
-                email:
-                  brugernavn,
-                password:
-                  kodeord,
-              }
-            )
+      {fejl && <p style={{ color: "red" }}>{fejl}</p>}
 
-          if (error) {
-            alert(
-              error.message
-            )
-            return
-          }
-
-          alert(
-            "Bruger oprettet!"
-          )
-        }}
-      >
-        Opret bruger
-      </button>
-    </>
+      <p>
+        {erLogin ? "Ingen konto?" : "Har du allerede en konto?"}{" "}
+        <button onClick={() => setErLogin(!erLogin)}>
+          {erLogin ? "Opret konto" : "Log ind"}
+        </button>
+      </p>
+    </div>
   )
 }
 

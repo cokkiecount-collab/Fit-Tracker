@@ -1,112 +1,72 @@
 import { useState } from "react"
-
 import type { Saet } from "./types"
+import type { useSupabase } from "./hooks/useSupabase"
 
 type Props = {
   saet: Saet[]
-  gemSaet: (nyeSaet: Saet[]) => void
+  oevelseId: number
+  dagId: number
+  programId: number
+  db: ReturnType<typeof useSupabase>
 }
 
-function SaetListe({
-  saet,
-  gemSaet,
-}: Props) {
-  const [redigerIndex, setRedigerIndex] =
-    useState<number | null>(null)
-
+function SaetListe({ saet, oevelseId, dagId, programId, db }: Props) {
+  const [redigerIndex, setRedigerIndex] = useState<number | null>(null)
   const [vaegt, setVaegt] = useState("")
   const [reps, setReps] = useState("")
 
   return (
     <ul>
       {saet.map((s, index) => (
-        <li key={index}>
+        <li key={s.id ?? index}>
           {redigerIndex === index ? (
             <>
               <input
                 type="number"
                 value={vaegt}
-                onChange={(e) =>
-                  setVaegt(e.target.value)
-                }
+                onChange={(e) => setVaegt(e.target.value)}
                 style={{ width: "80px" }}
               />
-
               <input
                 type="number"
                 value={reps}
-                onChange={(e) =>
-                  setReps(e.target.value)
-                }
-                style={{
-                  width: "80px",
-                  marginLeft: "5px",
-                }}
+                onChange={(e) => setReps(e.target.value)}
+                style={{ width: "80px", marginLeft: "5px" }}
               />
-
               <button
-                onClick={() => {
-                  const nyeSaet = [...saet]
-
-                  nyeSaet[index] = {
-  ...nyeSaet[index],
-  vaegt: Number(vaegt),
-  reps: Number(reps),
-}
-
-                  gemSaet(nyeSaet)
-
+                onClick={async () => {
+                  await db.opdaterSaet(
+                    s.id!,
+                    Number(vaegt),
+                    Number(reps),
+                    oevelseId,
+                    dagId,
+                    programId
+                  )
                   setRedigerIndex(null)
                 }}
               >
                 Gem
               </button>
-
-              <button
-                onClick={() =>
-                  setRedigerIndex(null)
-                }
-              >
-                Annuller
-              </button>
+              <button onClick={() => setRedigerIndex(null)}>Annuller</button>
             </>
           ) : (
             <>
-              Sæt {index + 1}: {s.vaegt} kg ×{" "}
-              {s.reps}
-
+              Sæt {index + 1}: {s.vaegt} kg × {s.reps}
               <button
-                style={{
-                  marginLeft: "10px",
-                }}
+                style={{ marginLeft: "10px" }}
                 onClick={() => {
                   setRedigerIndex(index)
-                  setVaegt(
-                    s.vaegt.toString()
-                  )
-                  setReps(
-                    s.reps.toString()
-                  )
+                  setVaegt(s.vaegt.toString())
+                  setReps(s.reps.toString())
                 }}
               >
                 ✏️
               </button>
-
               <button
-                style={{
-                  marginLeft: "5px",
-                }}
-                onClick={() => {
-                  const nyeSaet = [
-                    ...saet,
-                  ]
-
-                  nyeSaet.splice(
-                    index,
-                    1
-                  )
-
-                  gemSaet(nyeSaet)
+                style={{ marginLeft: "5px" }}
+                onClick={async () => {
+                  await db.sletSaet(s.id!, oevelseId, dagId, programId)
                 }}
               >
                 🗑️

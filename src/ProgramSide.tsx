@@ -1,46 +1,35 @@
 import { useState } from "react"
-import type { Program, Oevelse } from "./types"
+import type { Program } from "./types"
 import OevelseKomponent from "./Oevelse"
+import type { useSupabase } from "./hooks/useSupabase"
 
 type Props = {
   programmer: Program[]
-  setProgrammer: (programmer: Program[]) => void
+  userId: string
+  db: ReturnType<typeof useSupabase>
 }
 
-function ProgramSide({
-  programmer,
-  setProgrammer,
-}: Props) {
+function ProgramSide({ programmer, userId, db }: Props) {
   const [programNavn, setProgramNavn] = useState("")
   const [dagNavn, setDagNavn] = useState("")
   const [oevelseNavn, setOevelseNavn] = useState("")
 
-  const [redigerOevelse, setRedigerOevelse] =
-    useState<number | null>(null)
+  const [redigerOevelse, setRedigerOevelse] = useState<number | null>(null)
+  const [nytOevelseNavn, setNytOevelseNavn] = useState("")
+  const [redigerDag, setRedigerDag] = useState<number | null>(null)
+  const [nytDagNavn, setNytDagNavn] = useState("")
+  const [redigerProgram, setRedigerProgram] = useState<number | null>(null)
+  const [nytProgramNavn, setNytProgramNavn] = useState("")
 
-  const [nytOevelseNavn, setNytOevelseNavn] =
-    useState("")
-  const [redigerDag, setRedigerDag] =
-  useState<number | null>(null)
+  const [valgtProgramId, setValgtProgramId] = useState<number | null>(null)
+  const [valgtDagId, setValgtDagId] = useState<number | null>(null)
+  const [valgtOevelseId, setValgtOevelseId] = useState<number | null>(null)
 
-const [nytDagNavn, setNytDagNavn] =
-  useState("")
-const [redigerProgram, setRedigerProgram] =
-  useState<number | null>(null)
+  const valgtProgram = programmer.find((p) => p.id === valgtProgramId) ?? null
+  const valgtDag = valgtProgram?.dage.find((d) => d.id === valgtDagId) ?? null
+  const valgtOevelse = valgtDag?.oevelser.find((o) => o.id === valgtOevelseId) ?? null
 
-const [nytProgramNavn, setNytProgramNavn] =
-  useState("")
-
-  const [valgtProgram, setValgtProgram] =
-    useState<number | null>(null)
-
-  const [valgtDag, setValgtDag] =
-    useState<number | null>(null)
-
-  const [valgtOevelse, setValgtOevelse] =
-    useState<number | null>(null)
-
-  if (valgtProgram === null) {
+  if (valgtProgramId === null) {
     return (
       <>
         <h2>Programmer</h2>
@@ -49,24 +38,13 @@ const [nytProgramNavn, setNytProgramNavn] =
           type="text"
           placeholder="Programnavn"
           value={programNavn}
-          onChange={(e) =>
-            setProgramNavn(e.target.value)
-          }
+          onChange={(e) => setProgramNavn(e.target.value)}
         />
 
         <button
-          onClick={() => {
-            if (programNavn.trim() === "")
-              return
-
-            setProgrammer([
-              ...programmer,
-              {
-                navn: programNavn,
-                dage: [],
-              },
-            ])
-
+          onClick={async () => {
+            if (programNavn.trim() === "") return
+            await db.opretProgram(programNavn, userId)
             setProgramNavn("")
           }}
         >
@@ -74,160 +52,74 @@ const [nytProgramNavn, setNytProgramNavn] =
         </button>
 
         <ul>
-  {programmer.map(
-    (program, index) => (
-      <li key={index}>
-        {redigerProgram === index ? (
-          <>
-            <input
-              value={nytProgramNavn}
-              onChange={(e) =>
-                setNytProgramNavn(
-                  e.target.value
-                )
-              }
-            />
-
-            <button
-              onClick={() => {
-                if (
-                  nytProgramNavn.trim() === ""
-                )
-                  return
-
-                const nyeProgrammer = [
-                  ...programmer,
-                ]
-
-                nyeProgrammer[index].navn =
-                  nytProgramNavn
-
-                setProgrammer(
-                  nyeProgrammer
-                )
-
-                setRedigerProgram(null)
-                setNytProgramNavn("")
-              }}
-            >
-              Gem
-            </button>
-
-            <button
-              onClick={() => {
-                setRedigerProgram(null)
-                setNytProgramNavn("")
-              }}
-            >
-              Annuller
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() =>
-                setValgtProgram(index)
-              }
-            >
-              {program.navn}
-            </button>
-
-            <button
-              style={{
-                marginLeft: "10px",
-              }}
-              onClick={() => {
-                setRedigerProgram(index)
-                setNytProgramNavn(
-                  program.navn
-                )
-              }}
-            >
-              ✏️
-            </button>
-
-            <button
-              style={{
-                marginLeft: "5px",
-              }}
-              onClick={() => {
-                if (
-                  !window.confirm(
-                    "Slet program?"
-                  )
-                )
-                  return
-
-                const nyeProgrammer = [
-                  ...programmer,
-                ]
-
-                nyeProgrammer.splice(
-                  index,
-                  1
-                )
-
-                setProgrammer(
-                  nyeProgrammer
-                )
-              }}
-            >
-              🗑️
-            </button>
-          </>
-        )}
-      </li>
-    )
-  )}
-</ul>
+          {programmer.map((program) => (
+            <li key={program.id}>
+              {redigerProgram === program.id ? (
+                <>
+                  <input
+                    value={nytProgramNavn}
+                    onChange={(e) => setNytProgramNavn(e.target.value)}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (nytProgramNavn.trim() === "") return
+                      await db.opdaterProgram(program.id!, nytProgramNavn)
+                      setRedigerProgram(null)
+                      setNytProgramNavn("")
+                    }}
+                  >
+                    Gem
+                  </button>
+                  <button onClick={() => { setRedigerProgram(null); setNytProgramNavn("") }}>
+                    Annuller
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setValgtProgramId(program.id!)}>
+                    {program.navn}
+                  </button>
+                  <button
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => { setRedigerProgram(program.id!); setNytProgramNavn(program.navn) }}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    style={{ marginLeft: "5px" }}
+                    onClick={async () => {
+                      if (!window.confirm("Slet program?")) return
+                      await db.sletProgram(program.id!)
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       </>
     )
   }
 
-  if (valgtDag === null) {
+  if (valgtDagId === null || !valgtProgram) {
     return (
       <>
-        <button
-          onClick={() =>
-            setValgtProgram(null)
-          }
-        >
-          ← Tilbage
-        </button>
-
-        <h2>
-          {programmer[valgtProgram].navn}
-        </h2>
+        <button onClick={() => setValgtProgramId(null)}>← Tilbage</button>
+        <h2>{valgtProgram?.navn}</h2>
 
         <input
           type="text"
           placeholder="Navn på træningsdag"
           value={dagNavn}
-          onChange={(e) =>
-            setDagNavn(e.target.value)
-          }
+          onChange={(e) => setDagNavn(e.target.value)}
         />
 
         <button
-          onClick={() => {
-            if (dagNavn.trim() === "")
-              return
-
-            const nyeProgrammer = [
-              ...programmer,
-            ]
-
-            nyeProgrammer[
-              valgtProgram
-            ].dage.push({
-              navn: dagNavn,
-              oevelser: [],
-            })
-
-            setProgrammer(
-              nyeProgrammer
-            )
-
+          onClick={async () => {
+            if (dagNavn.trim() === "") return
+            await db.opretDag(valgtProgramId, dagNavn)
             setDagNavn("")
           }}
         >
@@ -235,177 +127,72 @@ const [nytProgramNavn, setNytProgramNavn] =
         </button>
 
         <ul>
-  {programmer[
-    valgtProgram
-  ].dage.map((dag, index) => (
-    <li key={index}>
-      {redigerDag === index ? (
-        <>
-          <input
-            value={nytDagNavn}
-            onChange={(e) =>
-              setNytDagNavn(
-                e.target.value
-              )
-            }
-          />
-
-          <button
-            onClick={() => {
-              if (
-                nytDagNavn.trim() === ""
-              )
-                return
-
-              const nyeProgrammer = [
-                ...programmer,
-              ]
-
-              nyeProgrammer[
-                valgtProgram
-              ].dage[index].navn =
-                nytDagNavn
-
-              setProgrammer(
-                nyeProgrammer
-              )
-
-              setRedigerDag(null)
-              setNytDagNavn("")
-            }}
-          >
-            Gem
-          </button>
-
-          <button
-            onClick={() => {
-              setRedigerDag(null)
-              setNytDagNavn("")
-            }}
-          >
-            Annuller
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            onClick={() =>
-              setValgtDag(index)
-            }
-          >
-            {dag.navn}
-          </button>
-
-          <button
-            style={{
-              marginLeft: "10px",
-            }}
-            onClick={() => {
-              setRedigerDag(index)
-              setNytDagNavn(
-                dag.navn
-              )
-            }}
-          >
-            ✏️
-          </button>
-
-          <button
-            style={{
-              marginLeft: "5px",
-            }}
-            onClick={() => {
-              if (
-                !window.confirm(
-                  "Slet træningsdag?"
-                )
-              )
-                return
-
-              const nyeProgrammer = [
-                ...programmer,
-              ]
-
-              nyeProgrammer[
-                valgtProgram
-              ].dage.splice(
-                index,
-                1
-              )
-
-              setProgrammer(
-                nyeProgrammer
-              )
-            }}
-          >
-            🗑️
-          </button>
-        </>
-      )}
-    </li>
-  ))}
-</ul>
+          {valgtProgram?.dage.map((dag) => (
+            <li key={dag.id}>
+              {redigerDag === dag.id ? (
+                <>
+                  <input
+                    value={nytDagNavn}
+                    onChange={(e) => setNytDagNavn(e.target.value)}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (nytDagNavn.trim() === "") return
+                      await db.opdaterDag(dag.id!, nytDagNavn, valgtProgramId)
+                      setRedigerDag(null)
+                      setNytDagNavn("")
+                    }}
+                  >
+                    Gem
+                  </button>
+                  <button onClick={() => { setRedigerDag(null); setNytDagNavn("") }}>
+                    Annuller
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setValgtDagId(dag.id!)}>{dag.navn}</button>
+                  <button
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => { setRedigerDag(dag.id!); setNytDagNavn(dag.navn) }}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    style={{ marginLeft: "5px" }}
+                    onClick={async () => {
+                      if (!window.confirm("Slet træningsdag?")) return
+                      await db.sletDag(dag.id!, valgtProgramId)
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       </>
     )
   }
 
-  if (valgtOevelse === null) {
+  if (valgtOevelseId === null || !valgtDag) {
     return (
       <>
-        <button
-          onClick={() =>
-            setValgtDag(null)
-          }
-        >
-          ← Tilbage
-        </button>
-
-        <h2>
-          {
-            programmer[valgtProgram]
-              .dage[valgtDag].navn
-          }
-        </h2>
+        <button onClick={() => setValgtDagId(null)}>← Tilbage</button>
+        <h2>{valgtDag?.navn}</h2>
 
         <input
           type="text"
           placeholder="Øvelsesnavn"
           value={oevelseNavn}
-          onChange={(e) =>
-            setOevelseNavn(
-              e.target.value
-            )
-          }
+          onChange={(e) => setOevelseNavn(e.target.value)}
         />
 
         <button
-          onClick={() => {
-            if (
-              oevelseNavn.trim() === ""
-            )
-              return
-
-            const nyeProgrammer = [
-              ...programmer,
-            ]
-
-            const nyOevelse: Oevelse = {
-              navn: oevelseNavn,
-              saet: [],
-            }
-
-            nyeProgrammer[
-              valgtProgram
-            ].dage[
-              valgtDag
-            ].oevelser.push(
-              nyOevelse
-            )
-
-            setProgrammer(
-              nyeProgrammer
-            )
-
+          onClick={async () => {
+            if (oevelseNavn.trim() === "") return
+            await db.opretOevelse(valgtDagId, valgtProgramId, oevelseNavn)
             setOevelseNavn("")
           }}
         >
@@ -413,185 +200,66 @@ const [nytProgramNavn, setNytProgramNavn] =
         </button>
 
         <ul>
-          {programmer[
-            valgtProgram
-          ].dage[
-            valgtDag
-          ].oevelser.map(
-            (oevelse, index) => (
-              <li key={index}>
-                {redigerOevelse === index ? (
-                  <>
-                    <input
-                      value={
-                        nytOevelseNavn
-                      }
-                      onChange={(e) =>
-                        setNytOevelseNavn(
-                          e.target.value
-                        )
-                      }
-                    />
-
-                    <button
-                      onClick={() => {
-                        if (
-                          nytOevelseNavn.trim() ===
-                          ""
-                        )
-                          return
-
-                        const nyeProgrammer =
-                          [
-                            ...programmer,
-                          ]
-
-                        nyeProgrammer[
-                          valgtProgram
-                        ].dage[
-                          valgtDag
-                        ].oevelser[
-                          index
-                        ].navn =
-                          nytOevelseNavn
-
-                        setProgrammer(
-                          nyeProgrammer
-                        )
-
-                        setRedigerOevelse(
-                          null
-                        )
-
-                        setNytOevelseNavn(
-                          ""
-                        )
-                      }}
-                    >
-                      Gem
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setRedigerOevelse(
-                          null
-                        )
-
-                        setNytOevelseNavn(
-                          ""
-                        )
-                      }}
-                    >
-                      Annuller
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() =>
-                        setValgtOevelse(
-                          index
-                        )
-                      }
-                    >
-                      {oevelse.navn}
-                    </button>
-
-                    <button
-                      style={{
-                        marginLeft:
-                          "10px",
-                      }}
-                      onClick={() => {
-                        setRedigerOevelse(
-                          index
-                        )
-
-                        setNytOevelseNavn(
-                          oevelse.navn
-                        )
-                      }}
-                    >
-                      ✏️
-                    </button>
-
-                    <button
-                      style={{
-                        marginLeft: "5px",
-                      }}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            "Slet øvelse?"
-                          )
-                        )
-                          return
-
-                        const nyeProgrammer =
-                          [
-                            ...programmer,
-                          ]
-
-                        nyeProgrammer[
-                          valgtProgram
-                        ].dage[
-                          valgtDag
-                        ].oevelser.splice(
-                          index,
-                          1
-                        )
-
-                        setProgrammer(
-                          nyeProgrammer
-                        )
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  </>
-                )}
-              </li>
-            )
-          )}
+          {valgtDag?.oevelser.map((oevelse) => (
+            <li key={oevelse.id}>
+              {redigerOevelse === oevelse.id ? (
+                <>
+                  <input
+                    value={nytOevelseNavn}
+                    onChange={(e) => setNytOevelseNavn(e.target.value)}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (nytOevelseNavn.trim() === "") return
+                      await db.opdaterOevelse(oevelse.id!, nytOevelseNavn, valgtDagId, valgtProgramId)
+                      setRedigerOevelse(null)
+                      setNytOevelseNavn("")
+                    }}
+                  >
+                    Gem
+                  </button>
+                  <button onClick={() => { setRedigerOevelse(null); setNytOevelseNavn("") }}>
+                    Annuller
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setValgtOevelseId(oevelse.id!)}>{oevelse.navn}</button>
+                  <button
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => { setRedigerOevelse(oevelse.id!); setNytOevelseNavn(oevelse.navn) }}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    style={{ marginLeft: "5px" }}
+                    onClick={async () => {
+                      if (!window.confirm("Slet øvelse?")) return
+                      await db.sletOevelse(oevelse.id!, valgtDagId, valgtProgramId)
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
         </ul>
       </>
     )
   }
 
-  const oevelse =
-    programmer[valgtProgram]
-      .dage[valgtDag]
-      .oevelser[valgtOevelse]
+  if (!valgtOevelse) return null
 
   return (
     <>
-      <button
-        onClick={() =>
-          setValgtOevelse(null)
-        }
-      >
-        ← Tilbage
-      </button>
-
+      <button onClick={() => setValgtOevelseId(null)}>← Tilbage</button>
       <OevelseKomponent
-        oevelse={oevelse}
-        gemOevelse={(nyOevelse) => {
-          const nyeProgrammer = [
-            ...programmer,
-          ]
-
-          nyeProgrammer[
-            valgtProgram
-          ].dage[
-            valgtDag
-          ].oevelser[
-            valgtOevelse
-          ] = nyOevelse
-
-          setProgrammer(
-            nyeProgrammer
-          )
-        }}
+        oevelse={valgtOevelse}
+        oevelseId={valgtOevelseId}
+        dagId={valgtDagId}
+        programId={valgtProgramId}
+        db={db}
       />
     </>
   )

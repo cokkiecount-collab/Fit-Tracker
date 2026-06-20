@@ -1,23 +1,19 @@
 import { useState } from "react"
 import type { Oevelse as OevelseType } from "./types"
 import SaetListe from "./SaetListe"
+import type { useSupabase } from "./hooks/useSupabase"
 
 type Props = {
   oevelse: OevelseType
-  gemOevelse: (
-    oevelse: OevelseType
-  ) => void
+  oevelseId: number
+  dagId: number
+  programId: number
+  db: ReturnType<typeof useSupabase>
 }
 
-function OevelseKomponent({
-  oevelse,
-  gemOevelse,
-}: Props) {
-  const [vaegt, setVaegt] =
-    useState("")
-
-  const [reps, setReps] =
-    useState("")
+function OevelseKomponent({ oevelse, oevelseId, dagId, programId, db }: Props) {
+  const [vaegt, setVaegt] = useState("")
+  const [reps, setReps] = useState("")
 
   return (
     <>
@@ -30,27 +26,12 @@ function OevelseKomponent({
       ) : (
         <ul>
           {[...oevelse.saet]
-            .sort(
-              (a, b) =>
-                new Date(
-                  b.dato
-                ).getTime() -
-                new Date(
-                  a.dato
-                ).getTime()
-            )
+            .sort((a, b) => new Date(b.dato).getTime() - new Date(a.dato).getTime())
             .slice(0, 3)
             .map((s, index) => (
               <li key={index}>
-                {s.vaegt} kg ×{" "}
-                {s.reps}
-                {" ("}
-                {new Date(
-                  s.dato
-                ).toLocaleDateString(
-                  "da-DK"
-                )}
-                {")"}
+                {s.vaegt} kg × {s.reps}
+                {" ("}{new Date(s.dato).toLocaleDateString("da-DK")}{")"}  
               </li>
             ))}
         </ul>
@@ -60,69 +41,35 @@ function OevelseKomponent({
         type="number"
         placeholder="Vægt"
         value={vaegt}
-        onChange={(e) =>
-          setVaegt(e.target.value)
-        }
+        onChange={(e) => setVaegt(e.target.value)}
       />
 
       <input
         type="number"
         placeholder="Reps"
         value={reps}
-        onChange={(e) =>
-          setReps(e.target.value)
-        }
-        style={{
-          marginLeft: "10px",
-        }}
+        onChange={(e) => setReps(e.target.value)}
+        style={{ marginLeft: "10px" }}
       />
 
       <button
-        onClick={() => {
-          if (
-            vaegt.trim() === "" ||
-            reps.trim() === ""
-          )
-            return
+        onClick={async () => {
+          if (vaegt.trim() === "" || reps.trim() === "") return
 
-          const nyVaegt =
-            Number(vaegt)
-
+          const nyVaegt = Number(vaegt)
           const nuvaerendePR =
             oevelse.saet.length > 0
-              ? Math.max(
-                  ...oevelse.saet.map(
-                    (s) =>
-                      s.vaegt
-                  )
-                )
+              ? Math.max(...oevelse.saet.map((s) => s.vaegt))
               : 0
+          const erNyPR = nyVaegt > nuvaerendePR
 
-          const erNyPR =
-            nyVaegt >
-            nuvaerendePR
-
-          gemOevelse({
-            ...oevelse,
-            saet: [
-              ...oevelse.saet,
-              {
-                vaegt: nyVaegt,
-                reps: Number(
-                  reps
-                ),
-                dato: new Date().toISOString(),
-              },
-            ],
-          })
+          await db.opretSaet(oevelseId, dagId, programId, nyVaegt, Number(reps))
 
           setVaegt("")
           setReps("")
 
           if (erNyPR) {
-            alert(
-              `🏆 Ny PR i ${oevelse.navn}!\n\n${nyVaegt} kg`
-            )
+            alert(`🏆 Ny PR i ${oevelse.navn}!\n\n${nyVaegt} kg`)
           }
         }}
       >
@@ -134,47 +81,20 @@ function OevelseKomponent({
       <ul>
         {(() => {
           let bedsteVaegt = 0
-
-          return [
-            ...oevelse.saet,
-          ]
-            .sort(
-              (a, b) =>
-                new Date(
-                  a.dato
-                ).getTime() -
-                new Date(
-                  b.dato
-                ).getTime()
-            )
+          return [...oevelse.saet]
+            .sort((a, b) => new Date(a.dato).getTime() - new Date(b.dato).getTime())
             .filter((s) => {
-              if (
-                s.vaegt >
-                bedsteVaegt
-              ) {
-                bedsteVaegt =
-                  s.vaegt
+              if (s.vaegt > bedsteVaegt) {
+                bedsteVaegt = s.vaegt
                 return true
               }
-
               return false
             })
-            .map(
-              (s, index) => (
-                <li
-                  key={index}
-                >
-                  🏆{" "}
-                  {new Date(
-                    s.dato
-                  ).toLocaleDateString(
-                    "da-DK"
-                  )}
-                  {" - "}
-                  {s.vaegt} kg
-                </li>
-              )
-            )
+            .map((s, index) => (
+              <li key={index}>
+                🏆 {new Date(s.dato).toLocaleDateString("da-DK")} - {s.vaegt} kg
+              </li>
+            ))
         })()}
       </ul>
 
@@ -182,14 +102,10 @@ function OevelseKomponent({
 
       <SaetListe
         saet={oevelse.saet}
-        gemSaet={(
-          nyeSaet
-        ) =>
-          gemOevelse({
-            ...oevelse,
-            saet: nyeSaet,
-          })
-        }
+        oevelseId={oevelseId}
+        dagId={dagId}
+        programId={programId}
+        db={db}
       />
     </>
   )
