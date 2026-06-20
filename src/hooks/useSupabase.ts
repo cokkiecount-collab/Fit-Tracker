@@ -48,7 +48,6 @@ export function useSupabase(userId: string | null) {
 
     const oevelseIds = (oevelserData ?? []).map((o) => o.id)
 
-    // Hent alle sessioner for denne bruger
     const { data: sessionerData } = dageIds.length > 0
       ? await supabase
           .from("sessioner")
@@ -60,12 +59,10 @@ export function useSupabase(userId: string | null) {
 
     const alleSessionIds = (sessionerData ?? []).map((s) => s.id)
 
-    // Hent alle saet med session_id
     const { data: alleSaetMedSession } = alleSessionIds.length > 0
       ? await supabase.from("saet").select("*").in("session_id", alleSessionIds).order("dato")
       : { data: [] }
 
-    // Find seneste session PER DAG der har saet i sig
     const senesteSessionMedSaetPerDag: Record<number, number> = {}
     for (const session of (sessionerData ?? [])) {
       const harSaet = (alleSaetMedSession ?? []).some((s) => s.session_id === session.id)
@@ -74,17 +71,14 @@ export function useSupabase(userId: string | null) {
       }
     }
 
-    // Saet fra seneste session med saet (til reminder)
     const reminderSaet = (alleSaetMedSession ?? []).filter((s) =>
       Object.values(senesteSessionMedSaetPerDag).includes(s.session_id)
     )
 
-    // Alle saet nogensinde (til PR beregning)
     const { data: alleSaet } = oevelseIds.length > 0
       ? await supabase.from("saet").select("oevelse_id, vaegt").in("oevelse_id", oevelseIds)
       : { data: [] }
 
-    // Beregn PR per oevelse
     const prPerOevelse: Record<number, number> = {}
     for (const s of (alleSaet ?? [])) {
       if (!prPerOevelse[s.oevelse_id] || s.vaegt > prPerOevelse[s.oevelse_id]) {
@@ -122,7 +116,6 @@ export function useSupabase(userId: string | null) {
     setLoading(false)
   }
 
-  // --- SESSIONER ---
   async function startSession(dagId: number, uid: string): Promise<number | null> {
     const { data, error } = await supabase
       .from("sessioner")
@@ -141,14 +134,8 @@ export function useSupabase(userId: string | null) {
     if (userId) await hentAltData(userId)
   }
 
-  // --- PROGRAM ---
   async function opretProgram(navn: string, uid: string) {
-    const { data, error } = await supabase
-      .from("programmer")
-      .insert({ navn, user_id: uid })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.from("programmer").insert({ navn, user_id: uid }).select().single()
     if (error || !data) return
     setProgrammer((prev) => [...prev, { id: data.id, navn: data.navn, dage: [] }])
   }
@@ -163,116 +150,46 @@ export function useSupabase(userId: string | null) {
     setProgrammer((prev) => prev.filter((p) => p.id !== id))
   }
 
-  // --- TRAENINGSDAG ---
   async function opretDag(programId: number, navn: string) {
-    const { data, error } = await supabase
-      .from("traeningsdage")
-      .insert({ navn, program_id: programId })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.from("traeningsdage").insert({ navn, program_id: programId }).select().single()
     if (error || !data) return
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId ? { ...p, dage: [...p.dage, { id: data.id, navn: data.navn, oevelser: [] }] } : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: [...p.dage, { id: data.id, navn: data.navn, oevelser: [] }] } : p))
   }
 
   async function opdaterDag(id: number, navn: string, programId: number) {
     await supabase.from("traeningsdage").update({ navn }).eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId ? { ...p, dage: p.dage.map((d) => (d.id === id ? { ...d, navn } : d)) } : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.map((d) => d.id === id ? { ...d, navn } : d) } : p))
   }
 
   async function sletDag(id: number, programId: number) {
     await supabase.from("traeningsdage").delete().eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId ? { ...p, dage: p.dage.filter((d) => d.id !== id) } : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.filter((d) => d.id !== id) } : p))
   }
 
-  // --- OEVELSE ---
   async function opretOevelse(dagId: number, programId: number, navn: string) {
-    const { data, error } = await supabase
-      .from("oevelser")
-      .insert({ navn, traeningsdag_id: dagId })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.from("oevelser").insert({ navn, traeningsdag_id: dagId }).select().single()
     if (error || !data) return
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: [...d.oevelser, { id: data.id, navn: data.navn, saet: [], prVaegt: 0 }] } : d) }
-          : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: [...d.oevelser, { id: data.id, navn: data.navn, saet: [], prVaegt: 0 }] } : d) } : p))
   }
 
   async function opdaterOevelse(id: number, navn: string, dagId: number, programId: number) {
     await supabase.from("oevelser").update({ navn }).eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.map((o) => o.id === id ? { ...o, navn } : o) } : d) }
-          : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.map((o) => o.id === id ? { ...o, navn } : o) } : d) } : p))
   }
 
   async function sletOevelse(id: number, dagId: number, programId: number) {
     await supabase.from("oevelser").delete().eq("id", id)
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.filter((o) => o.id !== id) } : d) }
-          : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.filter((o) => o.id !== id) } : d) } : p))
   }
 
-  // --- SAET ---
   async function opretSaet(oevelseId: number, dagId: number, programId: number, vaegt: number, reps: number, sessionId: number) {
     const dato = new Date().toISOString()
-    const { data, error } = await supabase
-      .from("saet")
-      .insert({ oevelse_id: oevelseId, vaegt, reps, dato, session_id: sessionId })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.from("saet").insert({ oevelse_id: oevelseId, vaegt, reps, dato, session_id: sessionId }).select().single()
     if (error || !data) return
-
-    // Opdater PR hvis ny rekord
-    setProgrammer((prev) =>
-      prev.map((p) =>
-        p.id === programId
-          ? {
-              ...p,
-              dage: p.dage.map((d) =>
-                d.id === dagId
-                  ? {
-                      ...d,
-                      oevelser: d.oevelser.map((o) =>
-                        o.id === oevelseId
-                          ? { ...o, prVaegt: Math.max(o.prVaegt ?? 0, vaegt) }
-                          : o
-                      ),
-                    }
-                  : d
-              ),
-            }
-          : p
-      )
-    )
+    setProgrammer((prev) => prev.map((p) => p.id === programId ? { ...p, dage: p.dage.map((d) => d.id === dagId ? { ...d, oevelser: d.oevelser.map((o) => o.id === oevelseId ? { ...o, prVaegt: Math.max(o.prVaegt ?? 0, vaegt) } : o) } : d) } : p))
   }
 
-  async function sletSaet(id: number, oevelseId: number, dagId: number, programId: number) {
+  async function sletSaet(id: number) {
     await supabase.from("saet").delete().eq("id", id)
   }
 
