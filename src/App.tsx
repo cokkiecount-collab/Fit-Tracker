@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import OverblikSide from "./OverblikSide"
-import ProgramSide from "./ProgramSide"
 import LoginSide from "./LoginSide"
+import OverblikSide from "./OverblikSide"
+import TraeningSide from "./TraeningSide"
+import AdminSide from "./AdminSide"
 import StatistikSide from "./StatistikSide"
 import { supabase } from "./supabase"
 import { useSupabase } from "./hooks/useSupabase"
@@ -18,11 +19,7 @@ function App() {
     async function hentBruger() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.email) {
-        setAktivBruger({
-          brugernavn: user.email,
-          kodeord: "",
-          programmer: [],
-        })
+        setAktivBruger({ brugernavn: user.email, kodeord: "", programmer: [] })
         setUserId(user.id)
       }
     }
@@ -31,21 +28,16 @@ function App() {
 
   if (!aktivBruger) {
     return (
-      <div style={{ maxWidth: "700px", margin: "0 auto", padding: "20px" }}>
-        <h1>Fit-Tracker 💪</h1>
-        <LoginSide
-          setAktivBruger={(bruger) => {
-            setAktivBruger(bruger)
-          }}
-          setUserId={setUserId}
-        />
+      <div style={{ maxWidth: "500px", margin: "0 auto", padding: "20px" }}>
+        <h1 style={{ textAlign: "center" }}>Fit-Tracker 💪</h1>
+        <LoginSide setAktivBruger={setAktivBruger} setUserId={setUserId} />
       </div>
     )
   }
 
   if (db.loading) {
     return (
-      <div style={{ maxWidth: "700px", margin: "0 auto", padding: "20px" }}>
+      <div style={{ maxWidth: "500px", margin: "0 auto", padding: "20px", textAlign: "center" }}>
         <h1>Fit-Tracker 💪</h1>
         <p>Henter data...</p>
       </div>
@@ -53,50 +45,54 @@ function App() {
   }
 
   return (
-    <div style={{ maxWidth: "700px", margin: "0 auto", padding: "20px" }}>
-      <h1>Fit-Tracker 💪</h1>
-
-      <p>
-        Logget ind som <strong>{aktivBruger.brugernavn}</strong>
-      </p>
-
-      <button
-        onClick={async () => {
-          await supabase.auth.signOut()
-          setAktivBruger(null)
-          setUserId(null)
-        }}
-      >
-        Log ud
-      </button>
-
-      <div style={{ display: "flex", gap: "10px", marginTop: "20px", marginBottom: "20px" }}>
-        <button onClick={() => setSide("overblik")}>Overblik</button>
-        <button onClick={() => setSide("programmer")}>Programmer</button>
-        <button onClick={() => setSide("statistik")}>Statistik</button>
-        <button onClick={() => setSide("indstillinger")}>Indstillinger</button>
-      </div>
-
-      {side === "overblik" && <OverblikSide programmer={db.programmer} />}
-
-      {side === "programmer" && (
-        <ProgramSide
-          programmer={db.programmer}
-          userId={userId!}
-          db={db}
-        />
-      )}
-
+    <div style={{ maxWidth: "500px", margin: "0 auto", padding: "16px", paddingBottom: "80px" }}>
+      {side === "overblik" && <OverblikSide programmer={db.programmer} setSide={setSide} />}
+      {side === "traening" && <TraeningSide programmer={db.programmer} db={db} />}
+      {side === "admin" && <AdminSide programmer={db.programmer} userId={userId!} db={db} />}
       {side === "statistik" && <StatistikSide programmer={db.programmer} />}
 
-      {side === "indstillinger" && (
-        <>
-          <h2>Indstillinger</h2>
-          <p>Kommer snart</p>
-        </>
-      )}
+      {/* Bundmenu */}
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: "flex",
+        justifyContent: "space-around",
+        backgroundColor: "#1a1a1a",
+        padding: "12px 0",
+        borderTop: "1px solid #333"
+      }}>
+        <button onClick={() => setSide("overblik")} style={navKnap(side === "overblik")}>
+          🏠 Hjem
+        </button>
+        <button onClick={() => setSide("traening")} style={navKnap(side === "traening")}>
+          💪 Træn
+        </button>
+        <button onClick={() => setSide("statistik")} style={navKnap(side === "statistik")}>
+          📈 Stats
+        </button>
+        <button onClick={() => setSide("admin")} style={navKnap(side === "admin")}>
+          ⚙️ Rediger
+        </button>
+      </div>
     </div>
   )
+}
+
+function navKnap(aktiv: boolean) {
+  return {
+    background: "none",
+    border: "none",
+    color: aktiv ? "#4ade80" : "#888",
+    fontSize: "13px",
+    fontWeight: aktiv ? "bold" : "normal",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: "2px"
+  }
 }
 
 export default App

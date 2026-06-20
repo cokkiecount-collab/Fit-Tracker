@@ -1,20 +1,13 @@
+import { useState } from "react"
 import type { Program } from "./types"
 
 type Props = {
   programmer: Program[]
+  setSide: (side: string) => void
 }
 
-function OverblikSide({
-  programmer,
-}: Props) {
+function OverblikSide({ programmer, setSide }: Props) {
   let tonnage = 0
-
-  const prs: {
-    oevelse: string
-    vaegt: number
-    reps: number
-  }[] = []
-
   let senesteDato = ""
   let senesteOevelse = ""
 
@@ -22,96 +15,101 @@ function OverblikSide({
     program.dage.forEach((dag) => {
       dag.oevelser.forEach((oevelse) => {
         oevelse.saet.forEach((saet) => {
-          tonnage +=
-            saet.vaegt * saet.reps
-
-          if (
-            saet.dato > senesteDato
-          ) {
+          tonnage += saet.vaegt * saet.reps
+          if (saet.dato > senesteDato) {
             senesteDato = saet.dato
-            senesteOevelse =
-              oevelse.navn
+            senesteOevelse = oevelse.navn
           }
         })
-
-        if (
-          oevelse.saet.length > 0
-        ) {
-          const bedsteSaet =
-            oevelse.saet.reduce(
-              (
-                bedste,
-                nuvaerende
-              ) =>
-                nuvaerende.vaegt >
-                bedste.vaegt
-                  ? nuvaerende
-                  : bedste
-            )
-
-          prs.push({
-            oevelse: oevelse.navn,
-            vaegt:
-              bedsteSaet.vaegt,
-            reps:
-              bedsteSaet.reps,
-          })
-        }
       })
     })
   })
 
   return (
     <>
-      <h2>Overblik</h2>
+      <h1 style={{ textAlign: "center", marginBottom: "24px" }}>Fit-Tracker 💪</h1>
 
-      <h3>Seneste træning</h3>
+      {/* Programmer kort */}
+      <h2 style={{ fontSize: "18px", marginBottom: "12px" }}>Dine programmer</h2>
 
-      {senesteDato === "" ? (
-        <p>
-          Ingen træninger endnu
-        </p>
+      {programmer.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>
+          <p>Du har ingen programmer endnu</p>
+          <button
+            onClick={() => setSide("admin")}
+            style={storKnap}
+          >
+            + Opret dit første program
+          </button>
+        </div>
       ) : (
-        <>
-          <p>
-            {new Date(
-              senesteDato
-            ).toLocaleDateString(
-              "da-DK"
-            )}
-          </p>
-
-          <p>
-            Seneste øvelse:
-            <strong>
-              {" "}
-              {senesteOevelse}
-            </strong>
-          </p>
-        </>
-      )}
-
-      <h3>Nye PR'er</h3>
-
-      {prs.length === 0 ? (
-        <p>Ingen PR'er endnu</p>
-      ) : (
-        <ul>
-          {prs.map((pr, index) => (
-            <li key={index}>
-              {pr.oevelse}:{" "}
-              {pr.vaegt} kg ×{" "}
-              {pr.reps}
-            </li>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {programmer.map((program) => (
+            <button
+              key={program.id}
+              onClick={() => setSide("traening")}
+              style={programKort}
+            >
+              <span style={{ fontSize: "20px" }}>💪</span>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontWeight: "bold", fontSize: "18px" }}>{program.navn}</div>
+                <div style={{ color: "#aaa", fontSize: "14px" }}>
+                  {program.dage.length} dag{program.dage.length !== 1 ? "e" : ""}
+                </div>
+              </div>
+            </button>
           ))}
-        </ul>
+        </div>
       )}
 
-      <h3>Samlet tonnage</h3>
-
-      <p>{tonnage} kg</p>
+      {/* Statistik widget */}
+      <div style={{ marginTop: "32px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
+        <h3 style={{ margin: "0 0 12px", fontSize: "16px" }}>📊 Overblik</h3>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>{programmer.length}</div>
+            <div style={{ fontSize: "12px", color: "#888" }}>Programmer</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>{tonnage.toLocaleString()}</div>
+            <div style={{ fontSize: "12px", color: "#888" }}>Kg løftet</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>
+              {senesteDato ? new Date(senesteDato).toLocaleDateString("da-DK", { day: "numeric", month: "short" }) : "-"}
+            </div>
+            <div style={{ fontSize: "12px", color: "#888" }}>Seneste træning</div>
+          </div>
+        </div>
+      </div>
     </>
   )
+}
+
+const storKnap: React.CSSProperties = {
+  backgroundColor: "#4ade80",
+  color: "#000",
+  border: "none",
+  borderRadius: "12px",
+  padding: "16px 24px",
+  fontSize: "16px",
+  fontWeight: "bold",
+  cursor: "pointer",
+  width: "100%",
+  marginTop: "12px"
+}
+
+const programKort: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+  backgroundColor: "#1e1e1e",
+  border: "1px solid #333",
+  borderRadius: "12px",
+  padding: "20px",
+  cursor: "pointer",
+  width: "100%",
+  color: "white"
 }
 
 export default OverblikSide
