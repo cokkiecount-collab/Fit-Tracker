@@ -48,7 +48,7 @@ export function useSupabase(userId: string | null) {
 
     const oevelseIds = (oevelserData ?? []).map((o) => o.id)
 
-    // Hent seneste session per dag
+    // Hent alle sessioner for denne bruger
     const { data: sessionerData } = dageIds.length > 0
       ? await supabase
           .from("sessioner")
@@ -58,19 +58,26 @@ export function useSupabase(userId: string | null) {
           .order("dato", { ascending: false })
       : { data: [] }
 
-    const senesteSessionPerDag: Record<number, number> = {}
-    for (const s of (sessionerData ?? [])) {
-      if (!senesteSessionPerDag[s.traeningsdag_id]) {
-        senesteSessionPerDag[s.traeningsdag_id] = s.id
+    const alleSessionIds = (sessionerData ?? []).map((s) => s.id)
+
+    // Hent alle saet med session_id
+    const { data: alleSaetMedSession } = alleSessionIds.length > 0
+      ? await supabase.from("saet").select("*").in("session_id", alleSessionIds).order("dato")
+      : { data: [] }
+
+    // Find seneste session PER DAG der har saet i sig
+    const senesteSessionMedSaetPerDag: Record<number, number> = {}
+    for (const session of (sessionerData ?? [])) {
+      const harSaet = (alleSaetMedSession ?? []).some((s) => s.session_id === session.id)
+      if (harSaet && !senesteSessionMedSaetPerDag[session.traeningsdag_id]) {
+        senesteSessionMedSaetPerDag[session.traeningsdag_id] = session.id
       }
     }
 
-    const senesteSessionIds = Object.values(senesteSessionPerDag)
-
-    // Seneste sessions saet (til reminder)
-    const { data: senesteSessionSaet } = senesteSessionIds.length > 0
-      ? await supabase.from("saet").select("*").in("session_id", senesteSessionIds).order("dato")
-      : { data: [] }
+    // Saet fra seneste session med saet (til reminder)
+    const reminderSaet = (alleSaetMedSession ?? []).filter((s) =>
+      Object.values(senesteSessionMedSaetPerDag).includes(s.session_id)
+    )
 
     // Alle saet nogensinde (til PR beregning)
     const { data: alleSaet } = oevelseIds.length > 0
@@ -99,7 +106,7 @@ export function useSupabase(userId: string | null) {
               id: o.id,
               navn: o.navn,
               prVaegt: prPerOevelse[o.id] ?? 0,
-              saet: (senesteSessionSaet ?? [])
+              saet: reminderSaet
                 .filter((s) => s.oevelse_id === o.id)
                 .map((s) => ({
                   id: s.id,
@@ -123,10 +130,7 @@ export function useSupabase(userId: string | null) {
       .select()
       .single()
 
-    if (error || !data) {
-      console.error("Fejl ved start session:", error)
-      return null
-    }
+    if (error || !data) return null
 
     setAktivSession({ id: data.id, traeningsdag_id: dagId, dato: data.dato, saet: [] })
     return data.id
@@ -242,10 +246,7 @@ export function useSupabase(userId: string | null) {
       .select()
       .single()
 
-    if (error || !data) {
-      console.error("Fejl ved opret saet:", error)
-      return
-    }
+    if (error || !data) return
 
     // Opdater PR hvis ny rekord
     setProgrammer((prev) =>
