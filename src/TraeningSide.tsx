@@ -174,7 +174,7 @@ function OevelseKort({
               <span style={{ color: "#aaa" }}>Sæt {i + 1}</span>
               <span>{s.vaegt} kg × {s.reps}</span>
               <button onClick={async () => {
-                await db.sletSaet(s.id!, oevelse.id!, dagId, programId)
+                await db.sletSaet(s.id!)
                 setDagSaet((prev) => prev.filter((x) => x.id !== s.id))
               }} style={{ background: "none", border: "none", cursor: "pointer", color: "#666", fontSize: "14px" }}>
                 ×
