@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
-import { supabase } from "../supabase"
-import type { Bruger } from "../types"
+import { useState } from "react"
+import { supabase } from "./supabase"
+import type { Bruger } from "./types"
 
 type Props = {
   setAktivBruger: (bruger: Bruger) => void
