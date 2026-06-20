@@ -44,12 +44,40 @@ function App() {
     )
   }
 
+  async function logUd() {
+    await supabase.auth.signOut()
+    setAktivBruger(null)
+    setUserId(null)
+  }
+
   return (
     <div style={{ maxWidth: "500px", margin: "0 auto", padding: "16px", paddingBottom: "80px" }}>
       {side === "overblik" && <OverblikSide programmer={db.programmer} setSide={setSide} />}
-      {side === "traening" && <TraeningSide programmer={db.programmer} db={db} />}
+      {side === "traening" && <TraeningSide programmer={db.programmer} userId={userId!} db={db} />}
       {side === "admin" && <AdminSide programmer={db.programmer} userId={userId!} db={db} />}
       {side === "statistik" && <StatistikSide programmer={db.programmer} />}
+      {side === "konto" && (
+        <div style={{ padding: "20px" }}>
+          <h2>Konto</h2>
+          <p style={{ color: "#888", marginBottom: "24px" }}>Logget ind som<br /><strong style={{ color: "white" }}>{aktivBruger.brugernavn}</strong></p>
+          <button
+            onClick={logUd}
+            style={{
+              backgroundColor: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              padding: "14px 24px",
+              fontSize: "16px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              width: "100%"
+            }}
+          >
+            Log ud
+          </button>
+        </div>
+      )}
 
       {/* Bundmenu */}
       <div style={{
@@ -74,6 +102,9 @@ function App() {
         </button>
         <button onClick={() => setSide("admin")} style={navKnap(side === "admin")}>
           ⚙️ Rediger
+        </button>
+        <button onClick={() => setSide("konto")} style={navKnap(side === "konto")}>
+          👤 Konto
         </button>
       </div>
     </div>
