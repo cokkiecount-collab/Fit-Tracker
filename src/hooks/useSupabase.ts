@@ -56,6 +56,8 @@ export function useSupabase(userId: string | null) {
           .order("dato", { ascending: false })
       : { data: [] }
 
+    console.log("Sessioner fundet:", sessionerData)
+
     // Find seneste session per dag
     const senesteSessionPerDag: Record<number, number> = {}
     for (const s of (sessionerData ?? [])) {
@@ -65,10 +67,13 @@ export function useSupabase(userId: string | null) {
     }
 
     const senesteSessionIds = Object.values(senesteSessionPerDag)
+    console.log("Seneste session IDs:", senesteSessionIds)
 
     const { data: saetData } = senesteSessionIds.length > 0
       ? await supabase.from("saet").select("*").in("session_id", senesteSessionIds).order("dato")
       : { data: [] }
+
+    console.log("Sæt fundet:", saetData)
 
     const byggede: Program[] = (progData ?? []).map((p) => ({
       id: p.id,
@@ -108,8 +113,12 @@ export function useSupabase(userId: string | null) {
       .select()
       .single()
 
-    if (error || !data) return null
+    if (error || !data) {
+      console.error("Fejl ved start session:", error)
+      return null
+    }
 
+    console.log("Session startet med id:", data.id)
     setAktivSession({ id: data.id, traeningsdag_id: dagId, dato: data.dato, saet: [] })
     return data.id
   }
@@ -218,14 +227,19 @@ export function useSupabase(userId: string | null) {
   // --- SAET ---
   async function opretSaet(oevelseId: number, dagId: number, programId: number, vaegt: number, reps: number, sessionId: number) {
     const dato = new Date().toISOString()
+    console.log("Gemmer sæt med session_id:", sessionId)
     const { data, error } = await supabase
       .from("saet")
       .insert({ oevelse_id: oevelseId, vaegt, reps, dato, session_id: sessionId })
       .select()
       .single()
 
-    if (error || !data) return
+    if (error || !data) {
+      console.error("Fejl ved opret sæt:", error)
+      return
+    }
 
+    console.log("Sæt gemt:", data)
     setAktivSession((prev) => prev ? {
       ...prev,
       saet: [...prev.saet, { id: data.id, vaegt, reps, dato, oevelse_id: oevelseId, session_id: sessionId }]
