@@ -97,14 +97,14 @@ function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
             setDagSaet([])
             setValgtDagId(null)
           }} style={afslutKnap}>
-            ✓ Afslut træning
+            ✓ Afslut
           </button>
         ) : (
           <button onClick={async () => {
             const id = await db.startSession(valgtDagId, userId)
             if (id) setAktivSessionId(id)
           }} style={startKnap}>
-            ▶ Start træning
+            ▶ Start
           </button>
         )}
       </div>
@@ -112,7 +112,7 @@ function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
       {!aktivSessionId ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>
           <p style={{ fontSize: "40px" }}>💪</p>
-          <p>Tryk "Start træning" for at begynde</p>
+          <p>Tryk "Start" for at begynde</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -176,7 +176,7 @@ function OevelseKort({
               <button onClick={async () => {
                 await db.sletSaet(s.id!)
                 setDagSaet((prev) => prev.filter((x) => x.id !== s.id))
-              }} style={{ background: "none", border: "none", cursor: "pointer", color: "#666", fontSize: "14px" }}>
+              }} style={{ background: "none", border: "none", cursor: "pointer", color: "#666", fontSize: "18px", padding: "0 4px" }}>
                 ×
               </button>
             </div>
@@ -184,9 +184,12 @@ function OevelseKort({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <input type="number" placeholder="Kg" value={vaegt} onChange={(e) => setVaegt(e.target.value)} style={inputStyle} />
-        <input type="number" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} style={inputStyle} />
+      {/* Log sæt - fuld bredde på mobil */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input type="number" placeholder="Kg" value={vaegt} onChange={(e) => setVaegt(e.target.value)} style={inputStyle} />
+          <input type="number" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} style={inputStyle} />
+        </div>
         <button
           onClick={async () => {
             if (!vaegt || !reps) return
@@ -200,7 +203,7 @@ function OevelseKort({
           }}
           style={logKnap}
         >
-          + Log
+          + Log sæt
         </button>
       </div>
     </div>
@@ -210,8 +213,8 @@ function OevelseKort({
 const tilbageKnap: React.CSSProperties = { background: "none", border: "none", color: "#4ade80", fontSize: "16px", cursor: "pointer", padding: "0", marginBottom: "16px" }
 const programKort: React.CSSProperties = { display: "flex", alignItems: "center", gap: "16px", backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "12px", padding: "20px", cursor: "pointer", width: "100%", color: "white" }
 const dagKort: React.CSSProperties = { display: "flex", alignItems: "center", gap: "16px", backgroundColor: "#1e1e1e", border: "1px solid #333", borderRadius: "12px", padding: "16px", cursor: "pointer", width: "100%", color: "white" }
-const inputStyle: React.CSSProperties = { flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #444", backgroundColor: "#2a2a2a", color: "white", fontSize: "16px" }
-const logKnap: React.CSSProperties = { backgroundColor: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "12px 16px", fontSize: "15px", fontWeight: "bold", cursor: "pointer" }
+const inputStyle: React.CSSProperties = { flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #444", backgroundColor: "#2a2a2a", color: "white", fontSize: "16px", minWidth: 0 }
+const logKnap: React.CSSProperties = { width: "100%", backgroundColor: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "14px", fontSize: "16px", fontWeight: "bold", cursor: "pointer" }
 const startKnap: React.CSSProperties = { backgroundColor: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "10px 16px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }
 const afslutKnap: React.CSSProperties = { backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "8px", padding: "10px 16px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }
 
