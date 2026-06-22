@@ -7,21 +7,10 @@ type Props = {
 }
 
 function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
-  let tonnage = 0
-  let senesteDato = ""
-
-  programmer.forEach((program) => {
-    program.dage.forEach((dag) => {
-      dag.oevelser.forEach((oevelse) => {
-        oevelse.saet.forEach((saet) => {
-          tonnage += saet.vaegt * saet.reps
-          if (saet.dato > senesteDato) {
-            senesteDato = saet.dato
-          }
-        })
-      })
-    })
-  })
+  const senesteDato = programmer
+    .flatMap((p) => p.dage.flatMap((d) => d.oevelser.flatMap((o) => o.saet.map((s) => s.dato))))
+    .sort()
+    .reverse()[0] ?? null
 
   return (
     <>
@@ -57,25 +46,14 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
         </div>
       )}
 
-      <div style={{ marginTop: "32px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: "16px" }}>📈 Overblik</h3>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>{programmer.length}</div>
-            <div style={{ fontSize: "12px", color: "#888" }}>Programmer</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>{tonnage.toLocaleString()}</div>
-            <div style={{ fontSize: "12px", color: "#888" }}>Kg løftet</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4ade80" }}>
-              {senesteDato ? new Date(senesteDato).toLocaleDateString("da-DK", { day: "numeric", month: "short" }) : "-"}
-            </div>
-            <div style={{ fontSize: "12px", color: "#888" }}>Seneste træning</div>
+      {senesteDato && (
+        <div style={{ marginTop: "24px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "13px", color: "#888" }}>Seneste træning</div>
+          <div style={{ fontSize: "18px", fontWeight: "bold", color: "#4ade80", marginTop: "4px" }}>
+            {new Date(senesteDato).toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}
           </div>
         </div>
-      </div>
+      )}
     </>
   )
 }

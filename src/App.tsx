@@ -62,7 +62,7 @@ function App() {
       {side === "overblik" && <OverblikSide programmer={db.programmer} setSide={setSide} gaaTilTraening={gaaTilTraening} />}
       {side === "traening" && <TraeningSide programmer={db.programmer} userId={userId!} db={db} startProgramId={valgtProgramId} />}
       {side === "admin" && <AdminSide programmer={db.programmer} userId={userId!} db={db} />}
-      {side === "statistik" && <StatistikSide programmer={db.programmer} />}
+      {side === "statistik" && <StatistikSide programmer={db.programmer} alleSaet={db.alleSaet} />}
       {side === "konto" && (
         <div style={{ padding: "20px" }}>
           <h2>Konto</h2>

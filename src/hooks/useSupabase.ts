@@ -9,14 +9,23 @@ export type Session = {
   saet: (Saet & { oevelse_id: number, session_id: number })[]
 }
 
+export type StatistikSaet = {
+  vaegt: number
+  reps: number
+  dato: string
+  oevelse_navn: string
+}
+
 export function useSupabase(userId: string | null) {
   const [programmer, setProgrammer] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [aktivSession, setAktivSession] = useState<Session | null>(null)
+  const [alleSaet, setAlleSaet] = useState<StatistikSaet[]>([])
 
   useEffect(() => {
     if (!userId) {
       setProgrammer([])
+      setAlleSaet([])
       setLoading(false)
       return
     }
@@ -75,12 +84,28 @@ export function useSupabase(userId: string | null) {
       Object.values(senesteSessionMedSaetPerDag).includes(s.session_id)
     )
 
-    const { data: alleSaet } = oevelseIds.length > 0
+    // Alle saet til statistik med oevelsenavn
+    const oevelseNavnMap: Record<number, string> = {}
+    for (const o of (oevelserData ?? [])) {
+      oevelseNavnMap[o.id] = o.navn
+    }
+
+    const statistikSaet: StatistikSaet[] = (alleSaetMedSession ?? []).map((s) => ({
+      vaegt: s.vaegt,
+      reps: s.reps,
+      dato: s.dato,
+      oevelse_navn: oevelseNavnMap[s.oevelse_id] ?? "Ukendt"
+    }))
+
+    setAlleSaet(statistikSaet)
+
+    // PR per oevelse
+    const { data: alleSaetPR } = oevelseIds.length > 0
       ? await supabase.from("saet").select("oevelse_id, vaegt").in("oevelse_id", oevelseIds)
       : { data: [] }
 
     const prPerOevelse: Record<number, number> = {}
-    for (const s of (alleSaet ?? [])) {
+    for (const s of (alleSaetPR ?? [])) {
       if (!prPerOevelse[s.oevelse_id] || s.vaegt > prPerOevelse[s.oevelse_id]) {
         prPerOevelse[s.oevelse_id] = s.vaegt
       }
@@ -124,7 +149,6 @@ export function useSupabase(userId: string | null) {
       .single()
 
     if (error || !data) return null
-
     setAktivSession({ id: data.id, traeningsdag_id: dagId, dato: data.dato, saet: [] })
     return data.id
   }
@@ -197,6 +221,7 @@ export function useSupabase(userId: string | null) {
     programmer,
     loading,
     aktivSession,
+    alleSaet,
     startSession,
     afslutSession,
     opretProgram,
