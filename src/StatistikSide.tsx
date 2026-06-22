@@ -48,7 +48,6 @@ function StatistikSide({ programmer, alleSaet }: Props) {
   let totalTonnage = 0
   let stoerstePR = 0
   let stoerstePROevelseNavn = ""
-
   const prs: { oevelse: string; vaegt: number }[] = []
 
   programmer.forEach((program) => {
@@ -106,7 +105,7 @@ function StatistikSide({ programmer, alleSaet }: Props) {
           </h3>
           <div style={{ backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "120px" }}>
-              {periodeLabels.map((lbl, i) => (
+              {periodeLabels.map((_lbl, i) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                   <div style={{
                     width: "100%",
@@ -130,7 +129,7 @@ function StatistikSide({ programmer, alleSaet }: Props) {
               <h3 style={{ fontSize: "15px", marginBottom: "12px" }}>{valgtOevelse} - Bedste løft per {periode}</h3>
               <div style={{ backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "120px" }}>
-                  {periodeLabels.map((lbl, i) => (
+                  {periodeLabels.map((_lbl, i) => (
                     <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                       <div style={{ fontSize: "9px", color: "#facc15" }}>{prVaerdier[i]}kg</div>
                       <div style={{
