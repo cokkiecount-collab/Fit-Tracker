@@ -12,15 +12,12 @@ function StatistikSide({ programmer, alleSaet }: Props) {
   const [periode, setPeriode] = useState<Periode>("uge")
   const [valgtOevelse, setValgtOevelse] = useState<string>("alle")
 
-  // Saml alle oevelsesnavne
   const oevelseNavne = Array.from(new Set(alleSaet.map((s) => s.oevelse_navn))).sort()
 
-  // Filtrer saet
   const filtreredeSaet = valgtOevelse === "alle"
     ? alleSaet
     : alleSaet.filter((s) => s.oevelse_navn === valgtOevelse)
 
-  // Gruppér tonnage per uge eller måned
   function getPeriodeNoegle(dato: string): string {
     const d = new Date(dato)
     if (periode === "uge") {
@@ -48,10 +45,9 @@ function StatistikSide({ programmer, alleSaet }: Props) {
   const maxTonnage = Math.max(...tonnageVaerdier, 1)
   const maxPR = Math.max(...prVaerdier, 1)
 
-  // Samlet statistik
   let totalTonnage = 0
   let stoerstePR = 0
-  let stoerstePROevelse = ""
+  let stoerstePROevelseNavn = ""
 
   const prs: { oevelse: string; vaegt: number }[] = []
 
@@ -60,7 +56,7 @@ function StatistikSide({ programmer, alleSaet }: Props) {
       dag.oevelser.forEach((oevelse) => {
         const pr = oevelse.prVaegt ?? 0
         if (pr > 0) prs.push({ oevelse: oevelse.navn, vaegt: pr })
-        if (pr > stoerstePR) { stoerstePR = pr; stoerstePROevelse = oevelse.navn }
+        if (pr > stoerstePR) { stoerstePR = pr; stoerstePROevelseNavn = oevelse.navn }
       })
     })
   })
@@ -72,7 +68,6 @@ function StatistikSide({ programmer, alleSaet }: Props) {
     <>
       <h2 style={{ marginBottom: "16px" }}>Statistik 📈</h2>
 
-      {/* Tal overblik */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
         <div style={kortStyle}>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "#4ade80" }}>{Math.round(totalTonnage).toLocaleString()}</div>
@@ -80,7 +75,7 @@ function StatistikSide({ programmer, alleSaet }: Props) {
         </div>
         <div style={kortStyle}>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "#facc15" }}>{stoerstePR > 0 ? stoerstePR + " kg" : "-"}</div>
-          <div style={{ fontSize: "12px", color: "#888" }}>Største PR</div>
+          <div style={{ fontSize: "12px", color: "#888" }}>Største PR{stoerstePROevelseNavn ? ` (${stoerstePROevelseNavn})` : ""}</div>
         </div>
         <div style={kortStyle}>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "#60a5fa" }}>{prs.length}</div>
@@ -88,7 +83,6 @@ function StatistikSide({ programmer, alleSaet }: Props) {
         </div>
       </div>
 
-      {/* Periode og øvelse vælger */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
         <button onClick={() => setPeriode("uge")} style={periode === "uge" ? aktivKnap : inaktivKnap}>Uge</button>
         <button onClick={() => setPeriode("maaned")} style={periode === "maaned" ? aktivKnap : inaktivKnap}>Måned</button>
@@ -105,7 +99,6 @@ function StatistikSide({ programmer, alleSaet }: Props) {
         ))}
       </select>
 
-      {/* Tonnage graf */}
       {periodeLabels.length > 0 ? (
         <>
           <h3 style={{ fontSize: "15px", marginBottom: "12px" }}>
@@ -113,7 +106,7 @@ function StatistikSide({ programmer, alleSaet }: Props) {
           </h3>
           <div style={{ backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "120px" }}>
-              {periodeLabels.map((label, i) => (
+              {periodeLabels.map((lbl, i) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                   <div style={{
                     width: "100%",
@@ -126,19 +119,18 @@ function StatistikSide({ programmer, alleSaet }: Props) {
               ))}
             </div>
             <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-              {periodeLabels.map((label, i) => (
-                <div key={i} style={{ flex: 1, textAlign: "center", fontSize: "9px", color: "#666", overflow: "hidden" }}>{label}</div>
+              {periodeLabels.map((lbl, i) => (
+                <div key={i} style={{ flex: 1, textAlign: "center", fontSize: "9px", color: "#666", overflow: "hidden" }}>{lbl}</div>
               ))}
             </div>
           </div>
 
-          {/* PR graf - kun hvis specifik øvelse valgt */}
           {valgtOevelse !== "alle" && (
             <>
               <h3 style={{ fontSize: "15px", marginBottom: "12px" }}>{valgtOevelse} - Bedste løft per {periode}</h3>
               <div style={{ backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "120px" }}>
-                  {periodeLabels.map((label, i) => (
+                  {periodeLabels.map((lbl, i) => (
                     <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
                       <div style={{ fontSize: "9px", color: "#facc15" }}>{prVaerdier[i]}kg</div>
                       <div style={{
@@ -152,8 +144,8 @@ function StatistikSide({ programmer, alleSaet }: Props) {
                   ))}
                 </div>
                 <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-                  {periodeLabels.map((label, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: "center", fontSize: "9px", color: "#666", overflow: "hidden" }}>{label}</div>
+                  {periodeLabels.map((lbl, i) => (
+                    <div key={i} style={{ flex: 1, textAlign: "center", fontSize: "9px", color: "#666", overflow: "hidden" }}>{lbl}</div>
                   ))}
                 </div>
               </div>
@@ -166,7 +158,6 @@ function StatistikSide({ programmer, alleSaet }: Props) {
         </div>
       )}
 
-      {/* Top PR'er */}
       <h3 style={{ fontSize: "15px", marginBottom: "12px" }}>🏆 Top PR'er</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {prs.slice(0, 5).map((pr, i) => (
