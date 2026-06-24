@@ -8,14 +8,17 @@ export type Saet = {
 export type Oevelse = {
   id?: number
   navn: string
-  saet: Saet[]       // seneste sessions saet (til reminder)
-  prVaegt?: number   // historisk PR
+  saet: Saet[]
+  prVaegt?: number
 }
 
 export type Traeningsdag = {
   id?: number
   navn: string
   oevelser: Oevelse[]
+  senesteSessionTonnage?: number
+  forrigeSessionTonnage?: number
+  senesteSessionDato?: string
 }
 
 export type Program = {

@@ -72,31 +72,48 @@ export function useSupabase(userId: string | null) {
       ? await supabase.from("saet").select("*").in("session_id", alleSessionIds).order("dato")
       : { data: [] }
 
-    const senesteSessionMedSaetPerDag: Record<number, number> = {}
+    // Find seneste OG næst-seneste session med sæt per dag
+    const sessionerMedSaetPerDag: Record<number, number[]> = {}
     for (const session of (sessionerData ?? [])) {
       const harSaet = (alleSaetMedSession ?? []).some((s) => s.session_id === session.id)
-      if (harSaet && !senesteSessionMedSaetPerDag[session.traeningsdag_id]) {
-        senesteSessionMedSaetPerDag[session.traeningsdag_id] = session.id
+      if (harSaet) {
+        if (!sessionerMedSaetPerDag[session.traeningsdag_id]) {
+          sessionerMedSaetPerDag[session.traeningsdag_id] = []
+        }
+        if (sessionerMedSaetPerDag[session.traeningsdag_id].length < 2) {
+          sessionerMedSaetPerDag[session.traeningsdag_id].push(session.id)
+        }
       }
     }
 
-    const reminderSaet = (alleSaetMedSession ?? []).filter((s) =>
-      Object.values(senesteSessionMedSaetPerDag).includes(s.session_id)
-    )
-
-    // Alle saet til statistik med oevelsenavn
-    const oevelseNavnMap: Record<number, string> = {}
-    for (const o of (oevelserData ?? [])) {
-      oevelseNavnMap[o.id] = o.navn
+    // Beregn tonnage per session
+    const tonnagePerSession: Record<number, number> = {}
+    for (const saet of (alleSaetMedSession ?? [])) {
+      if (!tonnagePerSession[saet.session_id]) tonnagePerSession[saet.session_id] = 0
+      tonnagePerSession[saet.session_id] += saet.vaegt * saet.reps
     }
 
+    // Seneste session dato per dag
+    const senesteSessionDatoPerDag: Record<number, string> = {}
+    for (const session of (sessionerData ?? [])) {
+      const ids = sessionerMedSaetPerDag[session.traeningsdag_id] ?? []
+      if (ids[0] === session.id) {
+        senesteSessionDatoPerDag[session.traeningsdag_id] = session.dato
+      }
+    }
+
+    // Reminder sæt (seneste session med sæt)
+    const senesteSessionIds = Object.values(sessionerMedSaetPerDag).map((ids) => ids[0]).filter(Boolean)
+    const reminderSaet = (alleSaetMedSession ?? []).filter((s) => senesteSessionIds.includes(s.session_id))
+
+    // Statistik sæt
+    const oevelseNavnMap: Record<number, string> = {}
+    for (const o of (oevelserData ?? [])) oevelseNavnMap[o.id] = o.navn
+
     const statistikSaet: StatistikSaet[] = (alleSaetMedSession ?? []).map((s) => ({
-      vaegt: s.vaegt,
-      reps: s.reps,
-      dato: s.dato,
+      vaegt: s.vaegt, reps: s.reps, dato: s.dato,
       oevelse_navn: oevelseNavnMap[s.oevelse_id] ?? "Ukendt"
     }))
-
     setAlleSaet(statistikSaet)
 
     // PR per oevelse
@@ -116,25 +133,28 @@ export function useSupabase(userId: string | null) {
       navn: p.navn,
       dage: (dageData ?? [])
         .filter((d) => d.program_id === p.id)
-        .map((d) => ({
-          id: d.id,
-          navn: d.navn,
-          oevelser: (oevelserData ?? [])
-            .filter((o) => o.traeningsdag_id === d.id)
-            .map((o) => ({
-              id: o.id,
-              navn: o.navn,
-              prVaegt: prPerOevelse[o.id] ?? 0,
-              saet: reminderSaet
-                .filter((s) => s.oevelse_id === o.id)
-                .map((s) => ({
-                  id: s.id,
-                  vaegt: s.vaegt,
-                  reps: s.reps,
-                  dato: s.dato,
-                })),
-            })),
-        })),
+        .map((d) => {
+          const sessionIds = sessionerMedSaetPerDag[d.id] ?? []
+          const senesteSessionTonnage = sessionIds[0] ? tonnagePerSession[sessionIds[0]] ?? 0 : 0
+          const forrigeSessionTonnage = sessionIds[1] ? tonnagePerSession[sessionIds[1]] ?? 0 : 0
+          return {
+            id: d.id,
+            navn: d.navn,
+            senesteSessionTonnage,
+            forrigeSessionTonnage,
+            senesteSessionDato: senesteSessionDatoPerDag[d.id],
+            oevelser: (oevelserData ?? [])
+              .filter((o) => o.traeningsdag_id === d.id)
+              .map((o) => ({
+                id: o.id,
+                navn: o.navn,
+                prVaegt: prPerOevelse[o.id] ?? 0,
+                saet: reminderSaet
+                  .filter((s) => s.oevelse_id === o.id)
+                  .map((s) => ({ id: s.id, vaegt: s.vaegt, reps: s.reps, dato: s.dato })),
+              })),
+          }
+        }),
     }))
 
     setProgrammer(byggede)
@@ -145,9 +165,7 @@ export function useSupabase(userId: string | null) {
     const { data, error } = await supabase
       .from("sessioner")
       .insert({ traeningsdag_id: dagId, user_id: uid, dato: new Date().toISOString() })
-      .select()
-      .single()
-
+      .select().single()
     if (error || !data) return null
     setAktivSession({ id: data.id, traeningsdag_id: dagId, dato: data.dato, saet: [] })
     return data.id
@@ -218,22 +236,11 @@ export function useSupabase(userId: string | null) {
   }
 
   return {
-    programmer,
-    loading,
-    aktivSession,
-    alleSaet,
-    startSession,
-    afslutSession,
-    opretProgram,
-    opdaterProgram,
-    sletProgram,
-    opretDag,
-    opdaterDag,
-    sletDag,
-    opretOevelse,
-    opdaterOevelse,
-    sletOevelse,
-    opretSaet,
-    sletSaet,
+    programmer, loading, aktivSession, alleSaet,
+    startSession, afslutSession,
+    opretProgram, opdaterProgram, sletProgram,
+    opretDag, opdaterDag, sletDag,
+    opretOevelse, opdaterOevelse, sletOevelse,
+    opretSaet, sletSaet,
   }
 }
