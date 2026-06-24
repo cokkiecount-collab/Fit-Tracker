@@ -30,6 +30,15 @@ function TraeningSide({ programmer, userId, db, startProgramId, valgtDagId, setV
   const valgtProgram = programmer.find((p) => p.id === valgtProgramId) ?? null
   const valgtDag = valgtProgram?.dage.find((d) => d.id === valgtDagId) ?? null
 
+  async function haandterAfslut() {
+    if (!aktivSessionId) return
+    const harSaet = dagSaet.length > 0
+    await db.afslutSession(aktivSessionId, harSaet)
+    setAktivSessionId(null)
+    setDagSaet([])
+    setValgtDagId(null)
+  }
+
   if (!valgtProgramId) {
     return (
       <>
@@ -86,12 +95,7 @@ function TraeningSide({ programmer, userId, db, startProgramId, valgtDagId, setV
           <p style={{ color: "#888", fontSize: "14px", margin: "4px 0 0" }}>{valgtProgram?.navn}</p>
         </div>
         {aktivSessionId ? (
-          <button onClick={async () => {
-            await db.afslutSession()
-            setAktivSessionId(null)
-            setDagSaet([])
-            setValgtDagId(null)
-          }} style={afslutKnap}>
+          <button onClick={haandterAfslut} style={afslutKnap}>
             ✓ Afslut
           </button>
         ) : (
@@ -126,7 +130,6 @@ function TraeningSide({ programmer, userId, db, startProgramId, valgtDagId, setV
             ))}
           </div>
 
-          {/* Tilføj øvelse direkte under træning */}
           <div style={{ marginTop: "20px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
             {visNyOevelse ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
