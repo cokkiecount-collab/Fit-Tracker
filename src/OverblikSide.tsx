@@ -14,8 +14,8 @@ type SenesteInfo = {
 
 function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
 
-  function getFremgang(seneste: number, forrige: number): { tekst: string; farve: string } | null {
-    if (!forrige || !seneste) return null
+  function getFremgang(seneste: number | undefined, forrige: number | undefined): { tekst: string; farve: string } | null {
+    if (!seneste || !forrige || forrige === 0) return null
     const procent = Math.round(((seneste - forrige) / forrige) * 100)
     if (procent === 0) return { tekst: "= 0%", farve: "#888" }
     if (procent > 0) return { tekst: `↑ +${procent}%`, farve: "#4ade80" }
@@ -28,7 +28,7 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
     program.dage.forEach((dag) => {
       if (dag.senesteSessionDato) {
         if (!senesteInfo || dag.senesteSessionDato > senesteInfo.dato) {
-          const fremgang = getFremgang(dag.senesteSessionTonnage ?? 0, dag.forrigeSessionTonnage ?? 0)
+          const fremgang = getFremgang(dag.senesteSessionTonnage, dag.forrigeSessionTonnage)
           senesteInfo = { dagNavn: dag.navn, dato: dag.senesteSessionDato, fremgang }
         }
       }
