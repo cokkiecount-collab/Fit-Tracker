@@ -6,6 +6,12 @@ type Props = {
   gaaTilTraening: (programId: number) => void
 }
 
+type SenesteInfo = {
+  dagNavn: string
+  dato: string
+  fremgang: { tekst: string; farve: string } | null
+}
+
 function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
 
   function getFremgang(seneste: number, forrige: number): { tekst: string; farve: string } | null {
@@ -16,9 +22,8 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
     return { tekst: `↓ ${procent}%`, farve: "#ef4444" }
   }
 
-  // Find seneste træningsdag per program
-  function getSenesteTraening(program: typeof programmer[0]) {
-    let senesteInfo: { dagNavn: string; dato: string; fremgang: { tekst: string; farve: string } | null } | null = null
+  function getSenesteTraening(program: Program): SenesteInfo | null {
+    let senesteInfo: SenesteInfo | null = null
 
     program.dage.forEach((dag) => {
       if (dag.senesteSessionDato) {
@@ -48,7 +53,7 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {programmer.map((program) => {
-            const seneste = getSenesteTraening(program)
+            const seneste: SenesteInfo | null = getSenesteTraening(program)
             return (
               <button
                 key={program.id}
@@ -58,13 +63,13 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
                 <span style={{ fontSize: "20px" }}>💪</span>
                 <div style={{ textAlign: "left", flex: 1 }}>
                   <div style={{ fontWeight: "bold", fontSize: "18px" }}>{program.navn}</div>
-                  {seneste ? (
+                  {seneste !== null ? (
                     <div style={{ fontSize: "13px", marginTop: "2px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ color: "#aaa" }}>
                         Sidst: <span style={{ color: "#4ade80" }}>{seneste.dagNavn}</span>
                         {" – "}{new Date(seneste.dato).toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short" })}
                       </span>
-                      {seneste.fremgang && (
+                      {seneste.fremgang !== null && (
                         <span style={{ color: seneste.fremgang.farve, fontWeight: "bold", fontSize: "13px" }}>
                           {seneste.fremgang.tekst}
                         </span>
