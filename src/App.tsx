@@ -13,6 +13,9 @@ function App() {
   const [aktivBruger, setAktivBruger] = useState<Bruger | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [valgtProgramId, setValgtProgramId] = useState<number | null>(null)
+  const [valgtDagId, setValgtDagId] = useState<number | null>(null)
+  const [aktivSessionId, setAktivSessionId] = useState<number | null>(null)
+  const [dagSaet, setDagSaet] = useState<any[]>([])
 
   const db = useSupabase(userId)
 
@@ -55,12 +58,29 @@ function App() {
     setAktivBruger(null)
     setUserId(null)
     setSide("overblik")
+    setAktivSessionId(null)
+    setDagSaet([])
   }
+
+  const harAktivSession = aktivSessionId !== null
 
   return (
     <div style={{ maxWidth: "500px", margin: "0 auto", padding: "16px", paddingBottom: "80px" }}>
       {side === "overblik" && <OverblikSide programmer={db.programmer} setSide={setSide} gaaTilTraening={gaaTilTraening} />}
-      {side === "traening" && <TraeningSide programmer={db.programmer} userId={userId!} db={db} startProgramId={valgtProgramId} />}
+      {side === "traening" && (
+        <TraeningSide
+          programmer={db.programmer}
+          userId={userId!}
+          db={db}
+          startProgramId={valgtProgramId}
+          valgtDagId={valgtDagId}
+          setValgtDagId={setValgtDagId}
+          aktivSessionId={aktivSessionId}
+          setAktivSessionId={setAktivSessionId}
+          dagSaet={dagSaet}
+          setDagSaet={setDagSaet}
+        />
+      )}
       {side === "admin" && <AdminSide programmer={db.programmer} userId={userId!} db={db} />}
       {side === "statistik" && <StatistikSide programmer={db.programmer} alleSaet={db.alleSaet} />}
       {side === "konto" && (
@@ -83,7 +103,9 @@ function App() {
         backgroundColor: "#1a1a1a", padding: "12px 0", borderTop: "1px solid #333"
       }}>
         <button onClick={() => setSide("overblik")} style={navKnap(side === "overblik")}>🏠 Hjem</button>
-        <button onClick={() => { setValgtProgramId(null); setSide("traening") }} style={navKnap(side === "traening")}>💪 Træn</button>
+        <button onClick={() => setSide("traening")} style={navKnap(side === "traening")}>
+          💪 Træn{harAktivSession ? " 🟢" : ""}
+        </button>
         <button onClick={() => setSide("statistik")} style={navKnap(side === "statistik")}>📈 Stats</button>
         <button onClick={() => setSide("admin")} style={navKnap(side === "admin")}>⚙️ Rediger</button>
         <button onClick={() => setSide("konto")} style={navKnap(side === "konto")}>👤 Konto</button>

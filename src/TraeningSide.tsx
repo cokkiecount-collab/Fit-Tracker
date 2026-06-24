@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import type { Program, Oevelse } from "./types"
 import type { useSupabase } from "./hooks/useSupabase"
 
@@ -7,20 +7,23 @@ type Props = {
   userId: string
   db: ReturnType<typeof useSupabase>
   startProgramId?: number | null
+  valgtDagId: number | null
+  setValgtDagId: (id: number | null) => void
+  aktivSessionId: number | null
+  setAktivSessionId: (id: number | null) => void
+  dagSaet: any[]
+  setDagSaet: React.Dispatch<React.SetStateAction<any[]>>
 }
 
-function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
+function TraeningSide({ programmer, userId, db, startProgramId, valgtDagId, setValgtDagId, aktivSessionId, setAktivSessionId, dagSaet, setDagSaet }: Props) {
   const [valgtProgramId, setValgtProgramId] = useState<number | null>(startProgramId ?? null)
-  const [valgtDagId, setValgtDagId] = useState<number | null>(null)
-  const [aktivSessionId, setAktivSessionId] = useState<number | null>(null)
-  const [dagSaet, setDagSaet] = useState<any[]>([])
+  const [nyOevelseNavn, setNyOevelseNavn] = useState("")
+  const [visNyOevelse, setVisNyOevelse] = useState(false)
 
   useEffect(() => {
-    if (startProgramId) {
+    if (startProgramId && startProgramId !== valgtProgramId) {
       setValgtProgramId(startProgramId)
       setValgtDagId(null)
-      setAktivSessionId(null)
-      setDagSaet([])
     }
   }, [startProgramId])
 
@@ -59,11 +62,7 @@ function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
         <p style={{ color: "#888", marginBottom: "12px" }}>Vælg træningsdag:</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {valgtProgram?.dage.map((dag) => (
-            <button key={dag.id} onClick={() => {
-              setValgtDagId(dag.id!)
-              setAktivSessionId(null)
-              setDagSaet([])
-            }} style={dagKort}>
+            <button key={dag.id} onClick={() => setValgtDagId(dag.id!)} style={dagKort}>
               <span style={{ fontSize: "20px" }}>📅</span>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontWeight: "bold", fontSize: "16px" }}>{dag.navn}</div>
@@ -79,11 +78,7 @@ function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
 
   return (
     <>
-      <button onClick={() => {
-        setValgtDagId(null)
-        setAktivSessionId(null)
-        setDagSaet([])
-      }} style={tilbageKnap}>← Tilbage</button>
+      <button onClick={() => setValgtDagId(null)} style={tilbageKnap}>← Tilbage</button>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <div>
@@ -115,20 +110,64 @@ function TraeningSide({ programmer, userId, db, startProgramId }: Props) {
           <p>Tryk "Start" for at begynde</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {valgtDag?.oevelser.map((oevelse) => (
-            <OevelseKort
-              key={oevelse.id}
-              oevelse={oevelse}
-              dagId={valgtDagId}
-              programId={valgtProgramId}
-              sessionId={aktivSessionId}
-              dagSaet={dagSaet.filter((s) => s.oevelse_id === oevelse.id!)}
-              setDagSaet={setDagSaet}
-              db={db}
-            />
-          ))}
-        </div>
+        <>
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {valgtDag?.oevelser.map((oevelse) => (
+              <OevelseKort
+                key={oevelse.id}
+                oevelse={oevelse}
+                dagId={valgtDagId}
+                programId={valgtProgramId}
+                sessionId={aktivSessionId}
+                dagSaet={dagSaet.filter((s) => s.oevelse_id === oevelse.id!)}
+                setDagSaet={setDagSaet}
+                db={db}
+              />
+            ))}
+          </div>
+
+          {/* Tilføj øvelse direkte under træning */}
+          <div style={{ marginTop: "20px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px" }}>
+            {visNyOevelse ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <input
+                  type="text"
+                  placeholder="Navn på øvelse..."
+                  value={nyOevelseNavn}
+                  onChange={(e) => setNyOevelseNavn(e.target.value)}
+                  style={{ padding: "12px", borderRadius: "8px", border: "1px solid #444", backgroundColor: "#2a2a2a", color: "white", fontSize: "15px" }}
+                  autoFocus
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={async () => {
+                      if (!nyOevelseNavn.trim()) return
+                      await db.opretOevelse(valgtDagId, valgtProgramId, nyOevelseNavn)
+                      setNyOevelseNavn("")
+                      setVisNyOevelse(false)
+                    }}
+                    style={{ flex: 1, backgroundColor: "#4ade80", color: "#000", border: "none", borderRadius: "8px", padding: "12px", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    + Tilføj
+                  </button>
+                  <button
+                    onClick={() => { setVisNyOevelse(false); setNyOevelseNavn("") }}
+                    style={{ backgroundColor: "#333", color: "white", border: "none", borderRadius: "8px", padding: "12px 16px", cursor: "pointer" }}
+                  >
+                    Annuller
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setVisNyOevelse(true)}
+                style={{ width: "100%", backgroundColor: "transparent", border: "1px dashed #444", borderRadius: "8px", padding: "12px", color: "#888", fontSize: "15px", cursor: "pointer" }}
+              >
+                + Tilføj øvelse
+              </button>
+            )}
+          </div>
+        </>
       )}
     </>
   )
@@ -184,7 +223,6 @@ function OevelseKort({
         </div>
       )}
 
-      {/* Log sæt - fuld bredde på mobil */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <div style={{ display: "flex", gap: "8px" }}>
           <input type="number" placeholder="Kg" value={vaegt} onChange={(e) => setVaegt(e.target.value)} style={inputStyle} />
