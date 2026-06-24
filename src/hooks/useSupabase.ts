@@ -72,7 +72,6 @@ export function useSupabase(userId: string | null) {
       ? await supabase.from("saet").select("*").in("session_id", alleSessionIds).order("dato")
       : { data: [] }
 
-    // Find seneste OG næst-seneste session med sæt per dag
     const sessionerMedSaetPerDag: Record<number, number[]> = {}
     for (const session of (sessionerData ?? [])) {
       const harSaet = (alleSaetMedSession ?? []).some((s) => s.session_id === session.id)
@@ -86,14 +85,12 @@ export function useSupabase(userId: string | null) {
       }
     }
 
-    // Beregn tonnage per session
     const tonnagePerSession: Record<number, number> = {}
     for (const saet of (alleSaetMedSession ?? [])) {
       if (!tonnagePerSession[saet.session_id]) tonnagePerSession[saet.session_id] = 0
       tonnagePerSession[saet.session_id] += saet.vaegt * saet.reps
     }
 
-    // Seneste session dato per dag
     const senesteSessionDatoPerDag: Record<number, string> = {}
     for (const session of (sessionerData ?? [])) {
       const ids = sessionerMedSaetPerDag[session.traeningsdag_id] ?? []
@@ -102,11 +99,9 @@ export function useSupabase(userId: string | null) {
       }
     }
 
-    // Reminder sæt (seneste session med sæt)
     const senesteSessionIds = Object.values(sessionerMedSaetPerDag).map((ids) => ids[0]).filter(Boolean)
     const reminderSaet = (alleSaetMedSession ?? []).filter((s) => senesteSessionIds.includes(s.session_id))
 
-    // Statistik sæt
     const oevelseNavnMap: Record<number, string> = {}
     for (const o of (oevelserData ?? [])) oevelseNavnMap[o.id] = o.navn
 
@@ -116,7 +111,6 @@ export function useSupabase(userId: string | null) {
     }))
     setAlleSaet(statistikSaet)
 
-    // PR per oevelse
     const { data: alleSaetPR } = oevelseIds.length > 0
       ? await supabase.from("saet").select("oevelse_id, vaegt").in("oevelse_id", oevelseIds)
       : { data: [] }
@@ -171,7 +165,12 @@ export function useSupabase(userId: string | null) {
     return data.id
   }
 
-  async function afslutSession() {
+  // Afslut session normalt - henter data igen
+  async function afslutSession(sessionId: number, harSaet: boolean) {
+    if (!harSaet) {
+      // Slet tom session
+      await supabase.from("sessioner").delete().eq("id", sessionId)
+    }
     setAktivSession(null)
     if (userId) await hentAltData(userId)
   }
