@@ -7,10 +7,23 @@ type Props = {
 }
 
 function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
-  const senesteDato = programmer
-    .flatMap((p) => p.dage.flatMap((d) => d.oevelser.flatMap((o) => o.saet.map((s) => s.dato))))
-    .sort()
-    .reverse()[0] ?? null
+
+  // Find seneste træningsdag og dato per program
+  function getSenesteTraening(program: Program): { dagNavn: string; dato: string } | null {
+    let senesteInfo: { dagNavn: string; dato: string } | null = null
+
+    program.dage.forEach((dag) => {
+      dag.oevelser.forEach((oevelse) => {
+        oevelse.saet.forEach((saet) => {
+          if (!senesteInfo || saet.dato > senesteInfo.dato) {
+            senesteInfo = { dagNavn: dag.navn, dato: saet.dato }
+          }
+        })
+      })
+    })
+
+    return senesteInfo
+  }
 
   return (
     <>
@@ -27,31 +40,31 @@ function OverblikSide({ programmer, setSide, gaaTilTraening }: Props) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {programmer.map((program) => (
-            <button
-              key={program.id}
-              onClick={() => gaaTilTraening(program.id!)}
-              style={programKort}
-            >
-              <span style={{ fontSize: "20px" }}>💪</span>
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontWeight: "bold", fontSize: "18px" }}>{program.navn}</div>
-                <div style={{ color: "#aaa", fontSize: "14px" }}>
-                  {program.dage.length} dag{program.dage.length !== 1 ? "e" : ""}
+          {programmer.map((program) => {
+            const seneste = getSenesteTraening(program)
+            return (
+              <button
+                key={program.id}
+                onClick={() => gaaTilTraening(program.id!)}
+                style={programKort}
+              >
+                <span style={{ fontSize: "20px" }}>💪</span>
+                <div style={{ textAlign: "left", flex: 1 }}>
+                  <div style={{ fontWeight: "bold", fontSize: "18px" }}>{program.navn}</div>
+                  {seneste ? (
+                    <div style={{ color: "#aaa", fontSize: "13px", marginTop: "2px" }}>
+                      Sidst: <span style={{ color: "#4ade80" }}>{seneste.dagNavn}</span>
+                      {" – "}
+                      {new Date(seneste.dato).toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short" })}
+                    </div>
+                  ) : (
+                    <div style={{ color: "#555", fontSize: "13px", marginTop: "2px" }}>Ikke trænet endnu</div>
+                  )}
                 </div>
-              </div>
-              <span style={{ marginLeft: "auto", color: "#4ade80", fontSize: "20px" }}>›</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {senesteDato && (
-        <div style={{ marginTop: "24px", backgroundColor: "#1e1e1e", borderRadius: "12px", padding: "16px", textAlign: "center" }}>
-          <div style={{ fontSize: "13px", color: "#888" }}>Seneste træning</div>
-          <div style={{ fontSize: "18px", fontWeight: "bold", color: "#4ade80", marginTop: "4px" }}>
-            {new Date(senesteDato).toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}
-          </div>
+                <span style={{ color: "#4ade80", fontSize: "20px" }}>›</span>
+              </button>
+            )
+          })}
         </div>
       )}
     </>
